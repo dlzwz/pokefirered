@@ -1874,7 +1874,7 @@ static void SpriteCB_MoveWildMonToRight(struct Sprite *sprite)
     if ((gIntroSlideFlags & 1) == 0)
     {
         sprite->x2 = 0;
-        sprite->callback = SpriteCb_WildMonShowHealthbox;
+        sprite->callback = SpriteCB_WildMonShowHealthbox;
     }
 }
 

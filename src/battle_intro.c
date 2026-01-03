@@ -80,6 +80,9 @@ s32 GetAnimBgAttribute(u8 bgId, u8 attributeId)
     return 0;
 }
 
+#define tState data[0]
+#define tTerrain data[1]
+
 void HandleIntroSlide(u8 terrain)
 {
     u8 taskId;
