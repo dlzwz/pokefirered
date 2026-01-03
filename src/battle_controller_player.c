@@ -303,15 +303,15 @@ static void HandleInputChooseAction(void)
             PlayerBufferExecCompleted();
         }
         else
-+        {
-+            if(!(gBattleTypeFlags & BATTLE_TYPE_TRAINER)) //if wild, pressing B moves cursor to run
-+            {
-+                PlaySE(SE_SELECT);
-+                ActionSelectionDestroyCursorAt(gActionSelectionCursor[gActiveBattler]);
-+                gActionSelectionCursor[gActiveBattler] = 3;
-+                ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
-+            }
-+        }
+        {
+            if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER)) // if wild, pressing B moves cursor to run
+            {
+                PlaySE(SE_SELECT);
+                ActionSelectionDestroyCursorAt(gActionSelectionCursor[gActiveBattler]);
+                gActionSelectionCursor[gActiveBattler] = 3;
+                ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
+            }
+        }
     }
     else if (JOY_NEW(START_BUTTON))
     {
