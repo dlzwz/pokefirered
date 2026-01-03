@@ -4954,7 +4954,7 @@ static void Task_PartyMenuReplaceMove(u8 taskId)
         move = gPartyMenu.learnMoveId;
         SetMonMoveSlot(mon, move, GetMoveSlotToReplace());
         if (GetMonData(mon, MON_DATA_PP1 + GetMoveSlotToReplace(), NULL) > oldPP)
-+            SetMonData(mon, MON_DATA_PP1 + GetMoveSlotToReplace(), &oldPP);
+            SetMonData(mon, MON_DATA_PP1 + GetMoveSlotToReplace(), &oldPP);
         Task_LearnedMove(taskId);
     }
 }
