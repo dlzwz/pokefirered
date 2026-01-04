@@ -20,6 +20,7 @@
 #include "fldeff.h"
 #include "heal_location.h"
 #include "help_system.h"
+#include "item.h"
 #include "link.h"
 #include "link_rfu.h"
 #include "load_save.h"
@@ -49,6 +50,7 @@
 #include "wild_encounter.h"
 #include "constants/cable_club.h"
 #include "constants/event_objects.h"
+#include "constants/items.h"
 #include "constants/maps.h"
 #include "constants/region_map_sections.h"
 #include "constants/songs.h"
@@ -127,6 +129,7 @@ static u8 GetAdjustedInitialTransitionFlags(struct InitialPlayerAvatarState *pla
 static u8 GetAdjustedInitialDirection(struct InitialPlayerAvatarState *playerStruct, u8 transitionFlags, u16 metatileBehavior, u8 mapType);
 static u16 GetCenterScreenMetatileBehavior(void);
 static void SetDefaultFlashLevel(void);
+static bool8 CanLearnFlashInParty(void);
 static void Overworld_TryMapConnectionMusicTransition(void);
 static void ChooseAmbientCrySpecies(void);
 
@@ -968,6 +971,19 @@ void SetFlashLevel(s32 flashLevel)
 u8 Overworld_GetFlashLevel(void)
 {
     return gSaveBlock1Ptr->flashLevel;
+}
+
+static bool8 CanLearnFlashInParty(void)
+{
+    u8 i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL))
+            break;
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG) && CanMonLearnTMHM(&gPlayerParty[i], ITEM_HM05 - ITEM_TM01))
+            return TRUE;
+    }
+    return FALSE;
 }
 
 void SetCurrentMapLayout(u16 mapLayoutId)

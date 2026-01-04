@@ -28,6 +28,7 @@
 #include "constants/songs.h"
 #include "constants/event_bg.h"
 #include "constants/event_objects.h"
+#include "constants/items.h"
 #include "constants/maps.h"
 #include "constants/metatile_behaviors.h"
 
@@ -602,7 +603,7 @@ static const u8 *GetInteractedWaterScript(struct MapPosition *unused1, u8 metati
 {
     if (MetatileBehavior_IsFastWater(metatileBehavior) == TRUE && PartyHasMonWithSurf() == TRUE)
         return EventScript_CurrentTooFast;
-    if (FlagGet(FLAG_BADGE05_GET) == TRUE && PartyHasMonWithSurf() == TRUE && IsPlayerFacingSurfableFishableWater() == TRUE)
+    if ((FlagGet(FLAG_BADGE05_GET) == TRUE || PartyHasMonWithSurf() == TRUE || CheckBagHasItem(ITEM_HM03 ,1)) && IsPlayerFacingSurfableFishableWater() == TRUE)
         return EventScript_UseSurf;
 
     if (MetatileBehavior_IsWaterfall(metatileBehavior) == TRUE)
