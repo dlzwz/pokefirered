@@ -33,6 +33,7 @@
 #include "trig.h"
 #include "vs_seeker.h"
 #include "util.h"
+#include "follow_me.h"
 #include "constants/abilities.h"
 #include "constants/battle_move_effects.h"
 #include "constants/battle_setup.h"
@@ -3913,6 +3914,11 @@ static void ReturnFromBattleToOverworld(void)
         }
         m4aSongNumStop(SE_LOW_HEALTH);
         SetMainCallback2(gMain.savedCallback);
+
+#if POST_BATTLE_FOLLOWER_FIX
+        FollowMe_WarpSetEnd();
+        gObjectEvents[GetFollowerObjectId()].invisible = TRUE;
+#endif
     }
 }
 
