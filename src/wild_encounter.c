@@ -649,7 +649,7 @@ static void ApplyCleanseTagEncounterRateMod(u32 *encounterRate)
     int i;
     for (i = 0; i < PARTY_SIZE; i++){
         if (GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM) == ITEM_CLEANSE_TAG){
-            *encRate = 0;
+            *encounterRate = 0;
             break;
         }
     }
