@@ -477,7 +477,7 @@ static void ResetForPokeStorage(void)
 static void InitStartingPosData(void)
 {
     ClearSavedCursorPos();
-    sInPartyMenu = gStorage->boxOption == OPTION_DEPOSIT;
+    sInPartyMenu = FALSE;
     sDepositBoxId = 0;
 }
 
