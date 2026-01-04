@@ -25,8 +25,8 @@
 #include "constants/songs.h"
 #include "constants/quest_log.h"
 
-// Any item in the TM Case with nonzero importance is considered an HM
-#define IS_HM(itemId) (ItemId_GetImportance(itemId) != 0)
+// Any item in the TM Case with an HM ID is considered an HM
+#define IS_HM(itemId) ((itemId) >= ITEM_HM01_CUT)
 
 #define TAG_SCROLL_ARROW 110
 
