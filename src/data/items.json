@@ -2921,7 +2921,7 @@
       "description_english": "Turning this on gives all\\nin the party EXP. points\\nfrom battles.",
       "importance": 1,
       "registrability": 1,
-      "pocket": "POCKET_KEY_ITEMS",
+      "pocket": "POCKET_ITEMS",
       "type": "ITEM_TYPE_FIELD",
       "fieldUseFunc": "FieldUseFunc_ExpShare",
       "battleUsage": 0,
