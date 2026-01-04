@@ -144,6 +144,7 @@ void NewGameInitData(void)
     UnionRoomChat_InitializeRegisteredTexts();
     ResetMiniGamesResults();
     ClearMysteryGift();
+    memset(&gSaveBlock2Ptr->follower, 0, sizeof(gSaveBlock2Ptr->follower));
     SetAllRenewableItemFlags();
     WarpToPlayersRoom();
     RunScriptImmediately(EventScript_ResetAllMapFlags);

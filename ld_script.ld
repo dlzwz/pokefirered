@@ -309,6 +309,7 @@ SECTIONS {
         src/trainer_tower.o(.text);
         src/berry_powder.o(.text);
         src/minigame_countdown.o(.text);
+        src/follow_me.o(.text);
         src/berry_fix_program.o(.text);
     } > ROM =0
 
