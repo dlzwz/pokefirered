@@ -67,11 +67,7 @@ enum
 
 void InitCursor(void)
 {
-    if (gStorage->boxOption != OPTION_DEPOSIT)
-        sCursorArea = CURSOR_AREA_IN_BOX;
-    else
-        sCursorArea = CURSOR_AREA_IN_PARTY;
-
+    sCursorArea = CURSOR_AREA_IN_BOX;
     sCursorPosition = 0;
     sIsMonBeingMoved = FALSE;
     sMovingMonOrigBoxId = 0;
@@ -1505,9 +1501,6 @@ static u8 HandleInput_InParty(void)
         {
             if (sCursorPosition == PARTY_SIZE)
             {
-                if (gStorage->boxOption == OPTION_DEPOSIT)
-                    return INPUT_CLOSE_BOX;
-
                 gotoBox = TRUE;
             }
             else if (SetSelectionMenuTexts())
@@ -1539,9 +1532,6 @@ static u8 HandleInput_InParty(void)
 
         if (JOY_NEW(B_BUTTON))
         {
-            if (gStorage->boxOption == OPTION_DEPOSIT)
-                return INPUT_PRESSED_B;
-
             gotoBox = TRUE;
         }
 
@@ -1758,18 +1748,6 @@ static bool8 SetMenuTextsForMon(void)
 
     switch (gStorage->boxOption)
     {
-    case OPTION_DEPOSIT:
-        if (species != SPECIES_NONE)
-            SetMenuText(MENU_TEXT_STORE);
-        else
-            return FALSE;
-        break;
-    case OPTION_WITHDRAW:
-        if (species != SPECIES_NONE)
-            SetMenuText(MENU_TEXT_WITHDRAW);
-        else
-            return FALSE;
-        break;
     case OPTION_MOVE_MONS:
         if (sIsMonBeingMoved)
         {
