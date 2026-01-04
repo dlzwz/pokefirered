@@ -559,6 +559,24 @@ void FieldUseFunc_Repel(u8 taskId)
         DisplayItemMessageInBag(taskId, FONT_NORMAL, gText_RepelEffectsLingered, Task_ReturnToBagFromContextMenu);
 }
 
+void FieldUseFunc_ExpShare(u8 taskId)
+{
+    bool8 inField = gTasks[taskId].data[3];
+
+    if (FlagGet(FLAG_EXP_SHARE))
+    {
+        FlagClear(FLAG_EXP_SHARE);
+        PlaySE(SE_PC_OFF);
+        DisplayItemMessageInCurrentContext(taskId, inField, FONT_NORMAL, gText_ExpShareTurnOff);
+    }
+    else
+    {
+        FlagSet(FLAG_EXP_SHARE);
+        PlaySE(SE_EXP_MAX);
+        DisplayItemMessageInCurrentContext(taskId, inField, FONT_NORMAL, gText_ExpShareTurnOn);
+    }
+}
+
 static void Task_UseRepel(u8 taskId)
 {
     if (!IsSEPlaying())
