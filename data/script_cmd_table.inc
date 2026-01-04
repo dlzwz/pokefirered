@@ -214,6 +214,24 @@ gScriptCmdTable::
 	.4byte ScrCmd_setmonmetlocation              @ 0xd2
 	.4byte ScrCmd_getbraillestringwidth          @ 0xd3
 	.4byte ScrCmd_bufferitemnameplural           @ 0xd4
+	.4byte ScrCmd_nop                            @ 0xd5
+	.4byte ScrCmd_nop                            @ 0xd6
+	.4byte ScrCmd_nop                            @ 0xd7
+	.4byte ScrCmd_nop                            @ 0xd8
+	.4byte ScrCmd_nop                            @ 0xd9
+	.4byte ScrCmd_nop                            @ 0xda
+	.4byte ScrCmd_nop                            @ 0xdb
+	.4byte ScrCmd_nop                            @ 0xdc
+	.4byte ScrCmd_nop                            @ 0xdd
+	.4byte ScrCmd_nop                            @ 0xde
+	.4byte ScrCmd_nop                            @ 0xdf
+	.4byte ScrCmd_nop                            @ 0xe0
+	.4byte ScrCmd_nop                            @ 0xe1
+	.4byte ScrCmd_nop                            @ 0xe2
+	.4byte ScrCmd_setfollower                    @ 0xe3
+	.4byte ScrCmd_destroyfollower                @ 0xe4
+	.4byte ScrCmd_facefollower                   @ 0xe5
+	.4byte ScrCmd_checkfollower                  @ 0xe6
 
 gScriptCmdTableEnd::
 	.4byte ScrCmd_nop

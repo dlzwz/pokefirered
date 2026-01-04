@@ -29,6 +29,7 @@
 #include "constants/field_tasks.h"
 #include "constants/field_weather.h"
 #include "constants/weather.h"
+#include "constants/follow_me.h"
 #include "constants/union_room.h"
 #include "constants/trade.h"
 #include "constants/quest_log.h"

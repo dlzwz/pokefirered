@@ -48,6 +48,7 @@
 #include "trainer_pokemon_sprites.h"
 #include "vs_seeker.h"
 #include "wild_encounter.h"
+#include "follow_me.h"
 #include "constants/cable_club.h"
 #include "constants/event_objects.h"
 #include "constants/items.h"
@@ -132,6 +133,7 @@ static void SetDefaultFlashLevel(void);
 static bool8 CanLearnFlashInParty(void);
 static void Overworld_TryMapConnectionMusicTransition(void);
 static void ChooseAmbientCrySpecies(void);
+static bool32 IsPlayerStandingStill(void);
 
 static void CB2_Overworld(void);
 static void CB2_LoadMap2(void);
@@ -1402,6 +1404,11 @@ bool32 IsUpdateLinkStateCBActive(void)
         return FALSE;
 }
 
+static bool32 IsPlayerStandingStill(void)
+{
+    return gPlayerAvatar.tileTransitionState == T_TILE_CENTER || gPlayerAvatar.tileTransitionState == T_NOT_MOVING;
+}
+
 static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
 {
     struct FieldInput fieldInput;
@@ -1425,6 +1432,8 @@ static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
             player_step(fieldInput.dpadDirection, newKeys, heldKeys);
         }
     }
+    if (PlayerHasFollower() && IsPlayerOnFoot() && IsPlayerStandingStill())
+        ObjectEventSetHeldMovement(&gObjectEvents[GetFollowerObjectId()], GetFaceDirectionAnimNum(gObjectEvents[GetFollowerObjectId()].facingDirection));
     RunQuestLogCB();
 }
 
@@ -1556,6 +1565,7 @@ void CB2_WhiteOut(void)
         StopMapMusic();
         ResetSafariZoneFlag_();
         DoWhiteOut();
+        FollowMe_TryRemoveFollowerOnWhiteOut();
         SetInitialPlayerAvatarStateWithDirection(DIR_NORTH);
         ScriptContext_Init();
         UnlockPlayerFieldControls();
@@ -1954,6 +1964,7 @@ static bool32 ReturnToFieldLocal(u8 *state)
         break;
     case 2:
         InitViewGraphics();
+        FollowMe_BindToSurbBlobOnReloadScreen();
         SetHelpContextForMap();
         (*state)++;
         break;
@@ -2150,6 +2161,7 @@ static void InitObjectEventsLocal(void)
     ResetInitialPlayerAvatarState();
     TrySpawnObjectEvents(0, 0);
     TryRunOnWarpIntoMapScript();
+    FollowMe_HandleSprite();
 }
 
 static void ReloadObjectsAndRunReturnToFieldMapScript(void)

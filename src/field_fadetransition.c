@@ -18,6 +18,7 @@
 #include "field_effect.h"
 #include "field_screen_effect.h"
 #include "field_specials.h"
+#include "follow_me.h"
 #include "event_object_lock.h"
 #include "start_menu.h"
 #include "constants/songs.h"
@@ -562,7 +563,7 @@ void DoDoorWarp(void)
 {
     LockPlayerFieldControls();
     gFieldCallback = FieldCB_DefaultWarpExit;
-    CreateTask(Task_DoorWarp, 10);
+    CreateTask(Task_DoDoorWarp, 10);
 }
 
 void DoTeleport2Warp(void)
