@@ -12,6 +12,7 @@
 #include "field_player_avatar.h"
 #include "field_poison.h"
 #include "field_specials.h"
+#include "item.h"
 #include "item_menu.h"
 #include "link.h"
 #include "wonder_news.h"
