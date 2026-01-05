@@ -7,7 +7,6 @@
 #include "field_effect.h"
 #include "field_effect_helpers.h"
 #include "field_player_avatar.h"
-#include "field_weather.h"
 #include "fieldmap.h"
 #include "metatile_behavior.h"
 #include "overworld.h"
@@ -81,7 +80,6 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y);
 static void SetPlayerAvatarObjectEventIdAndObjectId(u8, u8);
 static void ResetObjectEventFldEffData(struct ObjectEvent *);
 static u8 TryLoadObjectPalette(const struct SpritePalette *spritePalette);
-static u8 UpdateSpritePalette(const struct SpritePalette *spritePalette, struct Sprite *sprite);
 static u8 FindObjectEventPaletteIndexByTag(u16);
 static bool8 ObjectEventDoesElevationMatch(struct ObjectEvent *, u8);
 static bool8 IsElevationMismatchAt(u8 elevation, s16 x, s16 y);
@@ -2272,26 +2270,6 @@ static u8 TryLoadObjectPalette(const struct SpritePalette *spritePalette)
         return 0xFF;
     }
     return LoadSpritePalette(spritePalette);
-}
-
-// Update sprite's palette, freeing old palette if necessary
-static u8 UpdateSpritePalette(const struct SpritePalette *spritePalette, struct Sprite *sprite)
-{
-    // Free palette if otherwise unused
-    sprite->inUse = FALSE;
-    FieldEffectFreePaletteIfUnused(sprite->oam.paletteNum);
-    sprite->inUse = TRUE;
-    if (IndexOfSpritePaletteTag(spritePalette->tag) == 0xFF)
-    {
-        sprite->oam.paletteNum = LoadSpritePalette(spritePalette);
-        UpdateSpritePaletteWithWeather(sprite->oam.paletteNum);
-    }
-    else
-    {
-        sprite->oam.paletteNum = LoadSpritePalette(spritePalette);
-    }
-
-    return sprite->oam.paletteNum;
 }
 
 void PatchObjectPalette(u16 paletteTag, u8 paletteSlot)
