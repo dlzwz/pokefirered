@@ -207,5 +207,6 @@
 // Aliases for old names. "object event id" normally refers to an index into gObjectEvents, which these are not.
 #define OBJ_EVENT_ID_CAMERA LOCALID_CAMERA
 #define OBJ_EVENT_ID_PLAYER LOCALID_PLAYER
+#define OBJ_EVENT_ID_FOLLOWER 254
 
 #endif // GUARD_CONSTANTS_EVENT_OBJECTS_H

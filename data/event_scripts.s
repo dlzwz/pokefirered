@@ -1324,6 +1324,9 @@ EventScript_NoMoreRoomForPokemon::
 	release
 	end
 
+EventScript_Follower::
+	end
+
 	.include "data/text/braille.inc"
 	.include "data/scripts/trainers.inc"
 

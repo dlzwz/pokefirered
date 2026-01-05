@@ -118,6 +118,7 @@ extern const u8 gTVTodaysSmartShopperText11[];
 extern const u8 gTVTodaysSmartShopperText12[];
 extern const u8 gTVWorldOfMastersText00[];
 extern const u8 gTVWorldOfMastersText01[];
+extern const u8 EventScript_Follower[];
 extern const u8 gTVWorldOfMastersText02[];
 extern const u8 gTVTodaysRivalTrainerText00[];
 extern const u8 gTVTodaysRivalTrainerText07[];
