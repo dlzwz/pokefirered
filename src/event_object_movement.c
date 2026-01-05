@@ -95,6 +95,7 @@ static bool8 ShouldInitObjectEventStateFromTemplate(const struct ObjectEventTemp
 static bool8 TemplateIsObstacleAndWithinView(const struct ObjectEventTemplate *, s16, s16);
 static bool8 TemplateIsObstacleAndVisibleFromConnectingMap(const struct ObjectEventTemplate *, s16, s16);
 static void SetHideObstacleFlag(const struct ObjectEventTemplate *);
+static u8 GetDirectionToFace(s16 x1, s16 y1, s16 x2, s16 y2);
 static bool8 MovementType_Disguise_Callback(struct ObjectEvent *, struct Sprite *);
 static bool8 MovementType_Buried_Callback(struct ObjectEvent *, struct Sprite *);
 static u8 MovementType_RaiseHandAndStop_Callback(struct ObjectEvent *, struct Sprite *);
@@ -1942,24 +1943,22 @@ void UpdateFollowingPokemon(void)
 
     if (objEvent == NULL)
     {
-        struct ObjectEventTemplate template =
-        {
-            .localId = OBJ_EVENT_ID_FOLLOWER,
-            .graphicsId = graphicsId,
-            .kind = OBJ_KIND_NORMAL,
-            .x = gSaveBlock1Ptr->pos.x,
-            .y = gSaveBlock1Ptr->pos.y,
-            .objUnion.normal.elevation = gObjectEvents[gPlayerAvatar.objectEventId].active
-                                        ? gObjectEvents[gPlayerAvatar.objectEventId].currentElevation
-                                        : 3,
-            .objUnion.normal.movementType = MOVEMENT_TYPE_FOLLOW_PLAYER,
-            .objUnion.normal.movementRangeX = 0,
-            .objUnion.normal.movementRangeY = 0,
-            .objUnion.normal.trainerType = TRAINER_TYPE_NONE,
-            .objUnion.normal.trainerRange_berryTreeId = 0,
-            .script = EventScript_Follower,
-            .flagId = 0,
-        };
+        struct ObjectEventTemplate template;
+
+        template.localId = OBJ_EVENT_ID_FOLLOWER;
+        template.graphicsId = graphicsId;
+        template.x = gSaveBlock1Ptr->pos.x;
+        template.y = gSaveBlock1Ptr->pos.y;
+        template.objUnion.normal.elevation = gObjectEvents[gPlayerAvatar.objectEventId].active
+                                            ? gObjectEvents[gPlayerAvatar.objectEventId].currentElevation
+                                            : 3;
+        template.objUnion.normal.movementType = MOVEMENT_TYPE_FOLLOW_PLAYER;
+        template.objUnion.normal.movementRangeX = 0;
+        template.objUnion.normal.movementRangeY = 0;
+        template.objUnion.normal.trainerType = TRAINER_TYPE_NONE;
+        template.objUnion.normal.trainerRange_berryTreeId = 0;
+        template.script = EventScript_Follower;
+        template.flagId = 0;
 
         objectEventId = SpawnSpecialObjectEvent(&template);
         if (objectEventId >= OBJECT_EVENTS_COUNT)
@@ -4487,7 +4486,7 @@ bool8 MovementType_FollowPlayer_Shadow(struct ObjectEvent *objectEvent, struct S
                                    gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y);
         objectEvent->triggerGroundEffectsOnMove = FALSE;
     }
-    sprite->sTypeFuncId = 1;
+    sprite->data[1] = 1;
     return TRUE;
 }
 
@@ -4497,7 +4496,7 @@ bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, struct S
     {
         if (objectEvent->invisible)
         {
-            sprite->sTypeFuncId = 0;
+            sprite->data[1] = 0;
             return FALSE;
         }
         objectEvent->invisible = TRUE;
@@ -4505,7 +4504,7 @@ bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, struct S
                                    gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.x,
                                    gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y);
         objectEvent->triggerGroundEffectsOnMove = FALSE;
-        sprite->sTypeFuncId = 0;
+        sprite->data[1] = 0;
         return FALSE;
     }
     return gFollowPlayerMovementFuncs[PlayerGetCopyableMovement()](objectEvent, sprite, GetPlayerMovementDirection(), NULL);
@@ -4513,14 +4512,14 @@ bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, struct S
 
 bool8 MovementType_FollowPlayer_Moving(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
-    if (sMovementActionFuncs[objectEvent->movementActionId][sprite->sActionFuncId](objectEvent, sprite))
+    if (sMovementActionFuncs[objectEvent->movementActionId][sprite->data[2]](objectEvent, sprite))
     {
         objectEvent->movementActionId = MOVEMENT_ACTION_NONE;
-        sprite->sActionFuncId = 0;
+        sprite->data[2] = 0;
         objectEvent->singleMovementActive = FALSE;
         objectEvent->facingDirectionLocked = FALSE;
-        if (sprite->sTypeFuncId)
-            sprite->sTypeFuncId = 1;
+        if (sprite->data[1])
+            sprite->data[1] = 1;
     }
     return FALSE;
 }
@@ -4530,7 +4529,7 @@ bool8 FollowablePlayerMovement_Idle(struct ObjectEvent *objectEvent, struct Spri
     if (!objectEvent->singleMovementActive)
     {
         ObjectEventSetSingleMovement(objectEvent, sprite, GetWalkInPlaceNormalMovementAction(objectEvent->facingDirection));
-        sprite->sTypeFuncId = 1;
+        sprite->data[1] = 1;
         objectEvent->singleMovementActive = 1;
         return TRUE;
     }
@@ -4607,9 +4606,9 @@ bool8 FollowablePlayerMovement_Step(struct ObjectEvent *objectEvent, struct Spri
     {
         ObjectEventSetSingleMovement(objectEvent, sprite, GetWalkNormalMovementAction(direction));
     }
-    sprite->sActionFuncId = 0;
+    sprite->data[2] = 0;
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
@@ -4633,7 +4632,7 @@ bool8 FollowablePlayerMovement_GoSpeed1(struct ObjectEvent *objectEvent, struct 
     if (GetCollisionAtCoords(objectEvent, x, y, direction) || (tileCallback != NULL && !tileCallback(MapGridGetMetatileBehaviorAt(x, y))))
         ObjectEventSetSingleMovement(objectEvent, sprite, GetFaceDirectionMovementAction(direction));
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
@@ -4650,7 +4649,7 @@ bool8 FollowablePlayerMovement_GoSpeed2(struct ObjectEvent *objectEvent, struct 
     if (GetCollisionAtCoords(objectEvent, x, y, direction) || (tileCallback != NULL && !tileCallback(MapGridGetMetatileBehaviorAt(x, y))))
         ObjectEventSetSingleMovement(objectEvent, sprite, GetFaceDirectionMovementAction(direction));
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
@@ -4667,7 +4666,7 @@ bool8 FollowablePlayerMovement_Slide(struct ObjectEvent *objectEvent, struct Spr
     if (GetCollisionAtCoords(objectEvent, x, y, direction) || (tileCallback != NULL && !tileCallback(MapGridGetMetatileBehaviorAt(x, y))))
         ObjectEventSetSingleMovement(objectEvent, sprite, GetFaceDirectionMovementAction(direction));
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
@@ -4679,7 +4678,7 @@ bool8 FollowablePlayerMovement_JumpInPlace(struct ObjectEvent *objectEvent, stru
     direction = GetCopyDirection(gInitialMovementTypeFacingDirections[objectEvent->movementType], objectEvent->directionSequenceIndex, direction);
     ObjectEventSetSingleMovement(objectEvent, sprite, GetJumpInPlaceMovementAction(direction));
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
@@ -4696,7 +4695,7 @@ bool8 FollowablePlayerMovement_GoSpeed4(struct ObjectEvent *objectEvent, struct 
     if (GetCollisionAtCoords(objectEvent, x, y, direction) || (tileCallback != NULL && !tileCallback(MapGridGetMetatileBehaviorAt(x, y))))
         ObjectEventSetSingleMovement(objectEvent, sprite, GetFaceDirectionMovementAction(direction));
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
@@ -4712,7 +4711,7 @@ bool8 FollowablePlayerMovement_Jump(struct ObjectEvent *objectEvent, struct Spri
     MoveCoordsInDirection(direction, &x, &y, 2, 2);
     ObjectEventSetSingleMovement(objectEvent, sprite, GetJump2MovementAction(direction));
     objectEvent->singleMovementActive = TRUE;
-    sprite->sTypeFuncId = 2;
+    sprite->data[1] = 2;
     return TRUE;
 }
 
