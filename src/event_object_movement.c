@@ -6074,6 +6074,8 @@ enum {
     JUMP_TYPE_HIGH,
     JUMP_TYPE_LOW,
     JUMP_TYPE_NORMAL,
+    JUMP_TYPE_FAST,
+    JUMP_TYPE_FASTER,
 };
 
 void InitJump(struct ObjectEvent *objectEvent, struct Sprite *sprite, u8 direction, u8 distance, u8 type)
@@ -6097,6 +6099,13 @@ void InitJump(struct ObjectEvent *objectEvent, struct Sprite *sprite, u8 directi
 
 void InitJumpRegular(struct ObjectEvent *objectEvent, struct Sprite *sprite, u8 direction, u8 distance, u8 type)
 {
+    if (objectEvent->localId == OBJ_EVENT_ID_FOLLOWER
+      && type == JUMP_TYPE_HIGH
+      && distance == JUMP_DISTANCE_FAR
+      && PlayerGetCopyableMovement() != COPY_MOVE_JUMP2)
+    {
+        type = TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_DASH) ? JUMP_TYPE_FASTER : JUMP_TYPE_FAST;
+    }
     InitJump(objectEvent, sprite, direction, distance, type);
     SetStepAnimHandleAlternation(objectEvent, sprite, GetMoveDirectionAnimNum(objectEvent->facingDirection));
     DoShadowFieldEffect(objectEvent);
@@ -9460,7 +9469,22 @@ u8 DoJumpSpriteMovement(struct Sprite *sprite)
     if (sprite->sJumpDistance != JUMP_DISTANCE_IN_PLACE)
         Step1(sprite, sprite->tDirection);
 
-    sprite->y2 = GetJumpY(sprite->sTimer >> distanceToShift[sprite->sJumpDistance], sprite->sJumpType);
+    if (sprite->sJumpType == JUMP_TYPE_FASTER)
+    {
+        Step3(sprite, sprite->tDirection);
+        sprite->y2 = GetJumpY(sprite->sTimer >> distanceToShift[sprite->sJumpDistance], JUMP_TYPE_NORMAL);
+        sprite->sTimer += 3;
+    }
+    else if (sprite->sJumpType == JUMP_TYPE_FAST)
+    {
+        Step1(sprite, sprite->tDirection);
+        sprite->y2 = GetJumpY(sprite->sTimer >> distanceToShift[sprite->sJumpDistance], JUMP_TYPE_NORMAL);
+        sprite->sTimer++;
+    }
+    else
+    {
+        sprite->y2 = GetJumpY(sprite->sTimer >> distanceToShift[sprite->sJumpDistance], sprite->sJumpType);
+    }
 
     sprite->sTimer++;
 
