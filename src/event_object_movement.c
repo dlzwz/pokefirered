@@ -85,7 +85,7 @@ static bool8 ShouldSpawnFollower(void);
 static u8 GetFollowerObjectEventId(void);
 static u16 GetFollowerGraphicsIdForSpecies(u16 species);
 static void SpawnFollowingPokemon(void);
-static void UpdateFollowerMovement(u8 movementActionId);
+static void UpdateFollowerMovement(struct ObjectEvent *follower, s16 targetX, s16 targetY);
 static bool8 IsElevationMismatchAt(u8 elevation, s16 x, s16 y);
 static bool8 AreElevationsCompatible(u8 a, u8 b);
 static void ObjectCB_CameraObject(struct Sprite *);
@@ -2008,15 +2008,19 @@ static u16 GetFollowerGraphicsIdForSpecies(u16 species)
 static void SpawnFollowingPokemon(void)
 {
     struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
+    s16 followerX = player->currentCoords.x;
+    s16 followerY = player->currentCoords.y;
+    u8 followerDirection = GetOppositeDirection(player->facingDirection);
     u16 species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
     u16 graphicsId = GetFollowerGraphicsIdForSpecies(species);
     u8 objectEventId;
 
+    MoveCoords(followerDirection, &followerX, &followerY);
     objectEventId = SpawnSpecialObjectEventParameterized(graphicsId,
                                                          MOVEMENT_TYPE_FACE_DOWN,
                                                          OBJ_EVENT_ID_FOLLOWER,
-                                                         player->previousCoords.x,
-                                                         player->previousCoords.y,
+                                                         followerX,
+                                                         followerY,
                                                          player->previousElevation);
     if (objectEventId == OBJECT_EVENTS_COUNT)
         return;
@@ -2034,18 +2038,28 @@ void RemoveFollowingPokemon(void)
     RemoveObjectEvent(&gObjectEvents[objectEventId]);
 }
 
-static void UpdateFollowerMovement(u8 movementActionId)
+static void UpdateFollowerMovement(struct ObjectEvent *follower, s16 targetX, s16 targetY)
 {
-    struct ObjectEvent *follower = GetFollowerObject();
+    u8 direction;
+    u8 movementActionId;
 
-    if (follower == NULL)
+    if (ObjectEventCheckHeldMovementStatus(follower) == 0)
         return;
 
-    if (movementActionId == MOVEMENT_ACTION_NONE)
+    if (follower->currentCoords.x == targetX && follower->currentCoords.y == targetY)
         return;
 
-    if (ObjectEventCheckHeldMovementStatus(follower) != 0)
-        ObjectEventSetHeldMovement(follower, movementActionId);
+    if (follower->currentCoords.x < targetX)
+        direction = DIR_EAST;
+    else if (follower->currentCoords.x > targetX)
+        direction = DIR_WEST;
+    else if (follower->currentCoords.y < targetY)
+        direction = DIR_SOUTH;
+    else
+        direction = DIR_NORTH;
+
+    movementActionId = GetWalkNormalMovementAction(direction);
+    ObjectEventSetHeldMovement(follower, movementActionId);
 }
 
 void UpdateFollowingPokemon(void)
@@ -2054,7 +2068,6 @@ void UpdateFollowingPokemon(void)
     struct ObjectEvent *player;
     u16 species;
     u16 graphicsId;
-    u8 movementActionId;
 
     if (!ShouldSpawnFollower())
     {
@@ -2073,17 +2086,12 @@ void UpdateFollowingPokemon(void)
         return;
 
     player = &gObjectEvents[gPlayerAvatar.objectEventId];
-    if (follower->currentCoords.x != player->previousCoords.x
-        || follower->currentCoords.y != player->previousCoords.y)
-        MoveObjectEventToMapCoords(follower, player->previousCoords.x, player->previousCoords.y);
+    UpdateFollowerMovement(follower, player->previousCoords.x, player->previousCoords.y);
 
     species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
     graphicsId = GetFollowerGraphicsIdForSpecies(species);
     if (follower->graphicsId != graphicsId)
         ObjectEventSetGraphicsId(follower, graphicsId);
-
-    movementActionId = PlayerGetCopyableMovement();
-    UpdateFollowerMovement(movementActionId);
 }
 
 static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
