@@ -1,6 +1,5 @@
 #include "global.h"
 #include "gflib.h"
-#include "battle_anim.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "field_camera.h"
@@ -22,7 +21,8 @@
 #include "constants/event_objects.h"
 #include "constants/trainer_types.h"
 #include "constants/union_room.h"
-#include "pokeball.h"
+#include "battle.h"
+#include "data.h"
 
 static void MoveCoordsInDirection(u32, s16 *, s16 *, s16, s16);
 static bool8 ObjectEventExecSingleMovementAction(struct ObjectEvent *, struct Sprite *);
@@ -4569,8 +4569,7 @@ static bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, s
             return FALSE;
         }
         ClearObjectEventMovement(objectEvent, sprite);
-        AnimateBallOpenParticles(sprite->x, sprite->y - 5, sprite->oam.priority, sprite->subpriority, BALL_POKE);
-        ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_SET_INVISIBLE);
+        ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_EXIT_POKEBALL);
         objectEvent->singleMovementActive = 1;
         sprite->data[1] = 2;
         return TRUE;
@@ -4637,8 +4636,7 @@ static bool8 FollowablePlayerMovement_Step(struct ObjectEvent *objectEvent, stru
             return FALSE;
         }
         MoveObjectEventToMapCoords(objectEvent, targetX, targetY);
-        AnimateBallOpenParticles(sprite->x, sprite->y - 5, sprite->oam.priority, sprite->subpriority, BALL_POKE);
-        ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_SET_VISIBLE);
+        ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_ENTER_POKEBALL);
         objectEvent->singleMovementActive = TRUE;
         sprite->data[1] = 2;
         return TRUE;
@@ -6535,6 +6533,60 @@ static bool8 MovementAction_WalkInPlaceSlowDown_Step0(struct ObjectEvent *object
 {
     InitMoveInPlace(objectEvent, sprite, DIR_SOUTH, GetMoveDirectionAnimNum(DIR_SOUTH), 32);
     return MovementAction_WalkInPlaceSlow_Step1(objectEvent, sprite);
+}
+
+static bool8 MovementAction_ExitPokeball_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    u32 direction = objectEvent->facingDirection;
+
+    StartSpriteAnimInDirection(objectEvent, sprite, direction, GetMoveDirectionFastestAnimNum(direction));
+    sprite->affineAnims = gAffineAnims_BattleSpritePlayerSide;
+    sprite->oam.affineMode = ST_OAM_AFFINE_NORMAL;
+    InitSpriteAffineAnim(sprite);
+    StartSpriteAffineAnim(sprite, BATTLER_AFFINE_RETURN);
+    sprite->data[2] = 1;
+    return FALSE;
+}
+
+static bool8 MovementAction_ExitPokeball_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (!sprite->affineAnimEnded)
+        return FALSE;
+
+    FreeSpriteOamMatrix(sprite);
+    sprite->oam.affineMode = ST_OAM_AFFINE_OFF;
+    sprite->affineAnims = gDummySpriteAffineAnimTable;
+    objectEvent->invisible = TRUE;
+    sprite->animPaused = TRUE;
+    sprite->data[2] = 2;
+    return TRUE;
+}
+
+static bool8 MovementAction_EnterPokeball_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    u32 direction = objectEvent->facingDirection;
+
+    objectEvent->invisible = FALSE;
+    sprite->animPaused = FALSE;
+    StartSpriteAnimInDirection(objectEvent, sprite, direction, GetMoveDirectionFasterAnimNum(direction));
+    sprite->affineAnims = gAffineAnims_BattleSpritePlayerSide;
+    sprite->oam.affineMode = ST_OAM_AFFINE_NORMAL;
+    InitSpriteAffineAnim(sprite);
+    StartSpriteAffineAnim(sprite, BATTLER_AFFINE_EMERGE);
+    sprite->data[2] = 1;
+    return FALSE;
+}
+
+static bool8 MovementAction_EnterPokeball_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (!sprite->affineAnimEnded)
+        return FALSE;
+
+    FreeSpriteOamMatrix(sprite);
+    sprite->oam.affineMode = ST_OAM_AFFINE_OFF;
+    sprite->affineAnims = gDummySpriteAffineAnimTable;
+    sprite->data[2] = 2;
+    return TRUE;
 }
 
 static bool8 MovementAction_WalkInPlaceSlowUp_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
