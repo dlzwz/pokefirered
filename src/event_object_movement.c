@@ -1929,6 +1929,7 @@ struct ObjectEvent *GetFollowerObject(void)
 void UpdateFollowingPokemon(void)
 {
     struct ObjectEvent *objEvent = GetFollowerObject();
+    struct Sprite *sprite;
     u16 species;
     u16 graphicsId;
     u8 objectEventId;
@@ -1969,6 +1970,7 @@ void UpdateFollowingPokemon(void)
         objEvent->triggerGroundEffectsOnMove = FALSE;
     }
 
+    sprite = &gSprites[objEvent->spriteId];
     if (objEvent->graphicsId != graphicsId)
     {
         MoveObjectEventToMapCoords(objEvent,
@@ -1977,7 +1979,12 @@ void UpdateFollowingPokemon(void)
         ObjectEventSetGraphicsId(objEvent, graphicsId);
         objEvent->invisible = TRUE;
         objEvent->triggerGroundEffectsOnMove = FALSE;
+        sprite = &gSprites[objEvent->spriteId];
     }
+
+    sprite->anims = sAnimTable_Following;
+    StartSpriteAnim(sprite, GetFaceDirectionAnimNum(objEvent->facingDirection));
+    sprite->animPaused = FALSE;
 }
 
 void RemoveFollowingPokemon(void)
