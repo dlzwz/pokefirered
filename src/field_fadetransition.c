@@ -748,6 +748,7 @@ static void Task_DoorWarp(u8 taskId)
         FreezeObjectEvents();
         PlayerGetDestCoords(xp, yp);
         PlaySE(GetDoorSoundEffect(*xp, *yp - 1));
+        RemoveFollowingPokemon();
         task->data[1] = FieldAnimateDoorOpen(*xp, *yp - 1);
         task->data[0] = 1;
         break;
