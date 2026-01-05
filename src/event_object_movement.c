@@ -1,5 +1,6 @@
 #include "global.h"
 #include "gflib.h"
+#include "battle_anim.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "field_camera.h"
@@ -21,6 +22,7 @@
 #include "constants/event_objects.h"
 #include "constants/trainer_types.h"
 #include "constants/union_room.h"
+#include "pokeball.h"
 
 static void MoveCoordsInDirection(u32, s16 *, s16 *, s16, s16);
 static bool8 ObjectEventExecSingleMovementAction(struct ObjectEvent *, struct Sprite *);
@@ -53,6 +55,7 @@ static u8 ObjectEventCheckForReflectiveSurface(struct ObjectEvent *);
 static u8 GetReflectionTypeByMetatileBehavior(u32);
 static void InitObjectPriorityByElevation(struct Sprite *sprite, u8 elevation);
 static void ObjectEventUpdateSubpriority(struct ObjectEvent *, struct Sprite *);
+static void ClearObjectEventMovement(struct ObjectEvent *, struct Sprite *);
 static struct Pokemon *GetFollowingPikachu(void);
 static bool32 IsFollowerVisible(void);
 static void DoTracksGroundEffect_None(struct ObjectEvent *, struct Sprite *, u8);
@@ -488,7 +491,6 @@ static const u8 gInitialMovementTypeFacingDirections[MOVEMENT_TYPES_COUNT] = {
 #define OBJ_EVENT_PAL_TAG_RS_SUBMARINE_SHADOW         0x111B
 #define OBJ_EVENT_PAL_TAG_PIKACHU_FOLLOWER            0x111C
 #define OBJ_EVENT_PAL_TAG_NONE                        0x11FF
-#define OBJ_EVENT_PAL_TAG_WHITE                       (OBJ_EVENT_PAL_TAG_NONE - 1)
 
 #include "data/object_events/object_event_graphics_info_pointers.h"
 #include "data/field_effects/field_effect_object_template_pointers.h"
@@ -4567,6 +4569,7 @@ static bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, s
             return FALSE;
         }
         ClearObjectEventMovement(objectEvent, sprite);
+        AnimateBallOpenParticles(sprite->x, sprite->y - 5, sprite->oam.priority, sprite->subpriority, BALL_POKE);
         ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_SET_INVISIBLE);
         objectEvent->singleMovementActive = 1;
         sprite->data[1] = 2;
@@ -4634,6 +4637,7 @@ static bool8 FollowablePlayerMovement_Step(struct ObjectEvent *objectEvent, stru
             return FALSE;
         }
         MoveObjectEventToMapCoords(objectEvent, targetX, targetY);
+        AnimateBallOpenParticles(sprite->x, sprite->y - 5, sprite->oam.priority, sprite->subpriority, BALL_POKE);
         ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_SET_VISIBLE);
         objectEvent->singleMovementActive = TRUE;
         sprite->data[1] = 2;
@@ -5001,7 +5005,7 @@ static bool8 MovementType_RaiseHandAndMove_Step1(struct ObjectEvent *objectEvent
     return FALSE;
 }
 
-void ClearObjectEventMovement(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+static void ClearObjectEventMovement(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
     objectEvent->singleMovementActive = FALSE;
     objectEvent->heldMovementActive = FALSE;
@@ -6532,171 +6536,6 @@ static bool8 MovementAction_WalkInPlaceSlowDown_Step0(struct ObjectEvent *object
     InitMoveInPlace(objectEvent, sprite, DIR_SOUTH, GetMoveDirectionAnimNum(DIR_SOUTH), 32);
     return MovementAction_WalkInPlaceSlow_Step1(objectEvent, sprite);
 }
-
-static void ObjectEventSetPokeballGfx(struct ObjectEvent *objectEvent)
-{
-    u16 graphicsId = objectEvent->graphicsId;
-
-    ObjectEventSetGraphicsId(objectEvent, OBJ_EVENT_GFX_POKE_BALL);
-    objectEvent->graphicsId = graphicsId;
-}
-
-#define sDuration   data[3]
-#define sSpeedFlip  data[6]
-
-static bool8 MovementAction_ExitPokeball_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
-{
-    u32 direction = gObjectEvents[gPlayerAvatar.objectEventId].facingDirection;
-
-    SetObjectEventCoords(objectEvent, gObjectEvents[gPlayerAvatar.objectEventId].previousCoords.x,
-                         gObjectEvents[gPlayerAvatar.objectEventId].previousCoords.y);
-    objectEvent->invisible = FALSE;
-    if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_DASH))
-    {
-        StartSpriteAnimInDirection(objectEvent, sprite, direction, GetJumpSpecialDirectionAnimNum(direction));
-        sprite->sDuration = 8;
-        sprite->sSpeedFlip = 0;
-    }
-    else
-    {
-        StartSpriteAnimInDirection(objectEvent, sprite, direction, GetMoveDirectionFastestAnimNum(direction));
-        sprite->sDuration = 16;
-        sprite->sSpeedFlip = 1;
-    }
-    if (direction == DIR_EAST && sprite->anims[ANIM_STD_FACE_EAST]->frame.hFlip)
-        sprite->sSpeedFlip |= 1 << 4;
-    ObjectEventSetPokeballGfx(objectEvent);
-    objectEvent->inanimate = FALSE;
-    ApplyGlobalFieldPaletteTint(sprite->oam.paletteNum);
-    return MovementAction_ExitPokeball_Step1(objectEvent, sprite);
-}
-
-static const union AffineAnimCmd sAffineAnim_PokeballExit[] =
-{
-    AFFINEANIMCMD_FRAME(0x40, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0x80, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xC0, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0x100, 0x100, 0, 0),
-    AFFINEANIMCMD_END,
-};
-
-static const union AffineAnimCmd sAffineAnim_PokeballExitEast[] =
-{
-    AFFINEANIMCMD_FRAME(0xFFC0, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xFF80, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xFF40, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xFF00, 0x100, 0, 0),
-    AFFINEANIMCMD_END,
-};
-
-static const union AffineAnimCmd sAffineAnim_PokeballEnter[] =
-{
-    AFFINEANIMCMD_FRAME(0x100, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xC0, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0x80, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0x40, 0x100, 0, 0),
-    AFFINEANIMCMD_END,
-};
-
-static const union AffineAnimCmd sAffineAnim_PokeballEnterEast[] =
-{
-    AFFINEANIMCMD_FRAME(0xFF00, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xFF40, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xFF80, 0x100, 0, 0),
-    AFFINEANIMCMD_FRAME(0xFFC0, 0x100, 0, 0),
-    AFFINEANIMCMD_END,
-};
-
-static const union AffineAnimCmd *const sAffineAnims_PokeballFollower[] =
-{
-    sAffineAnim_PokeballExit,
-    sAffineAnim_PokeballExitEast,
-    sAffineAnim_PokeballEnter,
-    sAffineAnim_PokeballEnterEast,
-};
-
-static bool8 MovementAction_ExitPokeball_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
-{
-    u32 animStepFrame = (sprite->sSpeedFlip & 1) ? 7 : 3;
-    if (--sprite->sDuration == 0)
-    {
-        sprite->sActionFuncId = 2;
-        sprite->animCmdIndex = 0;
-        sprite->animPaused = TRUE;
-        return TRUE;
-    }
-    else if (sprite->sDuration == animStepFrame)
-    {
-        ObjectEventSetGraphicsId(objectEvent, objectEvent->graphicsId);
-        LoadFillColorPalette(RGB_WHITE, OBJ_EVENT_PAL_TAG_WHITE, sprite);
-        sprite->affineAnims = sAffineAnims_PokeballFollower;
-        sprite->oam.affineMode = ST_OAM_AFFINE_NORMAL;
-        InitSpriteAffineAnim(sprite);
-        StartSpriteAffineAnim(sprite, sprite->sSpeedFlip >> 4);
-    }
-    else if (sprite->sDuration == (animStepFrame >> 1))
-    {
-        sprite->affineAnimEnded = TRUE;
-        FreeSpriteOamMatrix(sprite);
-        sprite->oam.affineMode = ST_OAM_AFFINE_OFF;
-        ObjectEventSetGraphicsId(objectEvent, objectEvent->graphicsId);
-    }
-    return FALSE;
-}
-
-static bool8 MovementAction_EnterPokeball_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
-{
-    u32 direction = objectEvent->facingDirection;
-
-    StartSpriteAnimInDirection(objectEvent, sprite, direction, GetMoveDirectionFasterAnimNum(direction));
-    sprite->sDuration = 16;
-    if (direction == DIR_EAST && sprite->anims[ANIM_STD_FACE_EAST]->frame.hFlip)
-        sprite->sSpeedFlip = 3;
-    else
-        sprite->sSpeedFlip = 2;
-    return MovementAction_EnterPokeball_Step1(objectEvent, sprite);
-}
-
-static bool8 MovementAction_EnterPokeball_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
-{
-    if (--sprite->sDuration == 0)
-    {
-        sprite->sActionFuncId = 2;
-        return FALSE;
-    }
-    else if (sprite->sDuration == 11)
-    {
-        LoadFillColorPalette(RGB_WHITE, OBJ_EVENT_PAL_TAG_WHITE, sprite);
-        sprite->subspriteTableNum = 0;
-        sprite->affineAnims = sAffineAnims_PokeballFollower;
-        sprite->oam.affineMode = ST_OAM_AFFINE_NORMAL;
-        InitSpriteAffineAnim(sprite);
-        StartSpriteAffineAnim(sprite, sprite->sSpeedFlip);
-    }
-    else if (sprite->sDuration == 7)
-    {
-        sprite->affineAnimEnded = TRUE;
-        FreeSpriteOamMatrix(sprite);
-        sprite->oam.affineMode = ST_OAM_AFFINE_OFF;
-        ObjectEventSetPokeballGfx(objectEvent);
-        objectEvent->inanimate = FALSE;
-        ApplyGlobalFieldPaletteTint(sprite->oam.paletteNum);
-    }
-    return FALSE;
-}
-
-static bool8 MovementAction_EnterPokeball_Step2(struct ObjectEvent *objectEvent, struct Sprite *sprite)
-{
-    ObjectEventSetGraphicsId(objectEvent, objectEvent->graphicsId);
-    objectEvent->invisible = TRUE;
-    sprite->sTypeFuncId = 0;
-    sprite->sSpeedFlip = 0;
-    sprite->animPaused = TRUE;
-    return TRUE;
-}
-
-#undef sDuration
-#undef sSpeedFlip
 
 static bool8 MovementAction_WalkInPlaceSlowUp_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
