@@ -99,6 +99,7 @@ static bool8 MovementType_Buried_Callback(struct ObjectEvent *, struct Sprite *)
 static u8 MovementType_RaiseHandAndStop_Callback(struct ObjectEvent *, struct Sprite *);
 static u8 MovementType_RaiseHandAndJump_Callback(struct ObjectEvent *, struct Sprite *);
 static u8 MovementType_RaiseHandAndSwim_Callback(struct ObjectEvent *, struct Sprite *);
+u8 GetDirectionToFace(s16 x1, s16 y1, s16 x2, s16 y2);
 static bool8 MovementType_FollowPlayer_Shadow(struct ObjectEvent *, struct Sprite *);
 static bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *, struct Sprite *);
 static bool8 MovementType_FollowPlayer_Moving(struct ObjectEvent *, struct Sprite *);
@@ -1826,10 +1827,10 @@ void UpdateFollowingPokemon(void)
             .flagId = 0,
             .x = gSaveBlock1Ptr->pos.x,
             .y = gSaveBlock1Ptr->pos.y,
-            .elevation = gObjectEvents[gPlayerAvatar.objectEventId].active
+            .objUnion.normal.elevation = gObjectEvents[gPlayerAvatar.objectEventId].active
                 ? gObjectEvents[gPlayerAvatar.objectEventId].currentElevation
                 : 3,
-            .movementType = MOVEMENT_TYPE_FOLLOW_PLAYER,
+            .objUnion.normal.movementType = MOVEMENT_TYPE_FOLLOW_PLAYER,
         };
 
         if ((objId = SpawnSpecialObjectEvent(&template)) >= OBJECT_EVENTS_COUNT)
