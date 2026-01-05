@@ -1681,6 +1681,15 @@ static const struct SpriteFrameImage sPicTable_Pikachu[] = {
     overworld_frame(gObjectEventPic_Pikachu, 2, 2, 2),
 };
 
+static const struct SpriteFrameImage sPicTable_PikachuFollower[] = {
+    overworld_frame(gObjectEventPic_PikachuFollower, 4, 4, 0),
+    overworld_frame(gObjectEventPic_PikachuFollower, 4, 4, 1),
+    overworld_frame(gObjectEventPic_PikachuFollower, 4, 4, 2),
+    overworld_frame(gObjectEventPic_PikachuFollower, 4, 4, 3),
+    overworld_frame(gObjectEventPic_PikachuFollower, 4, 4, 4),
+    overworld_frame(gObjectEventPic_PikachuFollower, 4, 4, 5),
+};
+
 static const struct SpriteFrameImage sPicTable_Jigglypuff[] = {
     overworld_frame(gObjectEventPic_Jigglypuff, 2, 2, 0),
     overworld_frame(gObjectEventPic_Jigglypuff, 2, 2, 1),
