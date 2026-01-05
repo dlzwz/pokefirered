@@ -1948,12 +1948,6 @@ static u16 GetFollowerGraphicsIdForSpecies(u16 species)
         return OBJ_EVENT_GFX_CELEBI;
     case SPECIES_DEOXYS:
         return OBJ_EVENT_GFX_DEOXYS_N;
-    case SPECIES_DEOXYS_ATTACK:
-        return OBJ_EVENT_GFX_DEOXYS_A;
-    case SPECIES_DEOXYS_DEFENSE:
-        return OBJ_EVENT_GFX_DEOXYS_D;
-    case SPECIES_DEOXYS_SPEED:
-        return OBJ_EVENT_GFX_DEOXYS_N;
     case SPECIES_PIDGEOT:
         return OBJ_EVENT_GFX_PIDGEOT;
     case SPECIES_OMANYTE:
@@ -2027,7 +2021,6 @@ static void SpawnFollowingPokemon(void)
     if (objectEventId == OBJECT_EVENTS_COUNT)
         return;
 
-    gObjectEvents[objectEventId].script = EventScript_Follower;
     ObjectEventTurn(&gObjectEvents[objectEventId], player->facingDirection);
 }
 
@@ -2740,7 +2733,7 @@ static const u8 *GetObjectEventScriptPointerByLocalIdAndMap(u8 localId, u8 mapNu
 const u8 *GetObjectEventScriptPointerByObjectEventId(u8 objectEventId)
 {
     if (gObjectEvents[objectEventId].localId == OBJ_EVENT_ID_FOLLOWER)
-        return gObjectEvents[objectEventId].script;
+        return EventScript_Follower;
 
     return GetObjectEventScriptPointerByLocalIdAndMap(gObjectEvents[objectEventId].localId, gObjectEvents[objectEventId].mapNum, gObjectEvents[objectEventId].mapGroup);
 }
