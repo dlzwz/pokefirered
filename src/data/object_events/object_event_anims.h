@@ -1295,7 +1295,6 @@ static const union AnimCmd *const sAnimTable_Following[] = {
     [ANIM_EXIT_POKEBALL_FAST_NORTH] = sAnim_ExitPokeballFastNorth,
     [ANIM_EXIT_POKEBALL_FAST_WEST] = sAnim_ExitPokeballFastWest,
     [ANIM_EXIT_POKEBALL_FAST_EAST] = sAnim_ExitPokeballFastEast,
-    [ANIM_RAISE_HAND] = sAnim_RaiseHand,
 };
 
 static const union AnimCmd *const sAnimTable_HoOh[] = {
