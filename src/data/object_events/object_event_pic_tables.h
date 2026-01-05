@@ -791,6 +791,15 @@ static const struct SpriteFrameImage sPicTable_ItemBall[] = {
     overworld_frame(gObjectEventPic_ItemBall, 2, 2, 0),
 };
 
+static const struct SpriteFrameImage sPicTable_PokeBall[] = {
+    overworld_frame(gObjectEventPic_ItemBall, 2, 2, 0),
+    overworld_frame(gObjectEventPic_BallOpen, 2, 2, 0),
+    overworld_frame(gObjectEventPic_BallOpen, 2, 2, 0),
+    overworld_frame(gObjectEventPic_BallOpen, 2, 2, 0),
+    overworld_frame(gObjectEventPic_BallOpen, 2, 2, 0),
+    overworld_frame(gObjectEventPic_ItemBall, 2, 2, 0),
+};
+
 static const struct SpriteFrameImage sPicTable_ProfOak[] = {
     overworld_frame(gObjectEventPic_ProfOak, 2, 4, 0),
     overworld_frame(gObjectEventPic_ProfOak, 2, 4, 1),

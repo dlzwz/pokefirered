@@ -276,6 +276,7 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_KANGASKHAN]               = &gObjectEventGraphicsInfo_Kangaskhan,
     [OBJ_EVENT_GFX_PIKACHU]                  = &gObjectEventGraphicsInfo_Pikachu,
     [OBJ_EVENT_GFX_PIKACHU_FOLLOWER]         = &gObjectEventGraphicsInfo_PikachuFollower,
+    [OBJ_EVENT_GFX_POKE_BALL]                = &gObjectEventGraphicsInfo_PokeBall,
     [OBJ_EVENT_GFX_PSYDUCK]                  = &gObjectEventGraphicsInfo_Psyduck,
     [OBJ_EVENT_GFX_NIDORAN_F]                = &gObjectEventGraphicsInfo_NidoranF,
     [OBJ_EVENT_GFX_NIDORAN_M]                = &gObjectEventGraphicsInfo_NidoranM,
