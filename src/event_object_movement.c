@@ -90,8 +90,6 @@ static void UpdateFollowerMovement(struct ObjectEvent *follower, s16 targetX, s1
 static bool8 sFollowerTrackingInitialized;
 static s16 sFollowerTargetX;
 static s16 sFollowerTargetY;
-static s16 sFollowerLastPlayerX;
-static s16 sFollowerLastPlayerY;
 static bool8 IsElevationMismatchAt(u8 elevation, s16 x, s16 y);
 static bool8 AreElevationsCompatible(u8 a, u8 b);
 static void ObjectCB_CameraObject(struct Sprite *);
@@ -1944,12 +1942,10 @@ static void SpawnFollowingPokemon(void)
     struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
     s16 followerX = player->currentCoords.x;
     s16 followerY = player->currentCoords.y;
-    u8 followerDirection = GetOppositeDirection(player->facingDirection);
     u16 species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
     u16 graphicsId = GetFollowerGraphicsIdForSpecies(species);
     u8 objectEventId;
 
-    MoveCoords(followerDirection, &followerX, &followerY);
     objectEventId = SpawnSpecialObjectEventParameterized(graphicsId,
                                                          MOVEMENT_TYPE_FACE_DOWN,
                                                          OBJ_EVENT_ID_FOLLOWER,
@@ -2026,20 +2022,16 @@ void UpdateFollowingPokemon(void)
     player = &gObjectEvents[gPlayerAvatar.objectEventId];
     if (!sFollowerTrackingInitialized)
     {
-        sFollowerLastPlayerX = player->currentCoords.x;
-        sFollowerLastPlayerY = player->currentCoords.y;
         sFollowerTargetX = follower->currentCoords.x;
         sFollowerTargetY = follower->currentCoords.y;
         sFollowerTrackingInitialized = TRUE;
     }
 
-    if (player->currentCoords.x != sFollowerLastPlayerX
-        || player->currentCoords.y != sFollowerLastPlayerY)
+    if (player->currentCoords.x != player->previousCoords.x
+        || player->currentCoords.y != player->previousCoords.y)
     {
-        sFollowerTargetX = sFollowerLastPlayerX;
-        sFollowerTargetY = sFollowerLastPlayerY;
-        sFollowerLastPlayerX = player->currentCoords.x;
-        sFollowerLastPlayerY = player->currentCoords.y;
+        sFollowerTargetX = player->previousCoords.x;
+        sFollowerTargetY = player->previousCoords.y;
     }
 
     UpdateFollowerMovement(follower, sFollowerTargetX, sFollowerTargetY);
