@@ -7,6 +7,8 @@
 
 #include "global.h"
 
+extern const u8 EventScript_Follower[];
+
 extern const u8 gTVBravoTrainerText00[];
 extern const u8 gTVBravoTrainerText01[];
 extern const u8 gTVBravoTrainerText02[];

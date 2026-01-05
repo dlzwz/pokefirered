@@ -10,14 +10,17 @@
 #include "fieldmap.h"
 #include "metatile_behavior.h"
 #include "overworld.h"
+#include "pokemon.h"
 #include "quest_log.h"
 #include "random.h"
 #include "script.h"
+#include "event_scripts.h"
 #include "trainer_see.h"
 #include "trig.h"
 #include "constants/maps.h"
 #include "constants/event_object_movement.h"
 #include "constants/event_objects.h"
+#include "constants/pokemon.h"
 #include "constants/trainer_types.h"
 #include "constants/union_room.h"
 
@@ -78,6 +81,11 @@ static void ResetObjectEventFldEffData(struct ObjectEvent *);
 static u8 TryLoadObjectPalette(const struct SpritePalette *spritePalette);
 static u8 FindObjectEventPaletteIndexByTag(u16);
 static bool8 ObjectEventDoesElevationMatch(struct ObjectEvent *, u8);
+static bool8 ShouldSpawnFollower(void);
+static u8 GetFollowerObjectEventId(void);
+static u16 GetFollowerGraphicsIdForSpecies(u16 species);
+static void SpawnFollowingPokemon(void);
+static void UpdateFollowerMovement(u8 movementActionId);
 static bool8 IsElevationMismatchAt(u8 elevation, s16 x, s16 y);
 static bool8 AreElevationsCompatible(u8 a, u8 b);
 static void ObjectCB_CameraObject(struct Sprite *);
@@ -1868,6 +1876,221 @@ void SpawnObjectEventsOnReturnToField(s16 x, s16 y)
             SpawnObjectEventOnReturnToField(i, x, y);
     }
     CreateReflectionEffectSprites();
+    UpdateFollowingPokemon();
+}
+
+static bool8 ShouldSpawnFollower(void)
+{
+    return gPlayerPartyCount > 0;
+}
+
+static u8 GetFollowerObjectEventId(void)
+{
+    u8 i;
+
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {
+        if (gObjectEvents[i].active && gObjectEvents[i].localId == OBJ_EVENT_ID_FOLLOWER)
+            return i;
+    }
+    return OBJECT_EVENTS_COUNT;
+}
+
+struct ObjectEvent *GetFollowerObject(void)
+{
+    u8 objectEventId = GetFollowerObjectEventId();
+
+    if (objectEventId == OBJECT_EVENTS_COUNT)
+        return NULL;
+
+    return &gObjectEvents[objectEventId];
+}
+
+bool32 IsFollowerVisible(void)
+{
+    struct ObjectEvent *follower = GetFollowerObject();
+
+    if (follower == NULL)
+        return FALSE;
+
+    return !follower->invisible;
+}
+
+static u16 GetFollowerGraphicsIdForSpecies(u16 species)
+{
+    switch (species)
+    {
+    case SPECIES_PSYDUCK:
+        return OBJ_EVENT_GFX_PSYDUCK;
+    case SPECIES_LAPRAS:
+        return OBJ_EVENT_GFX_LAPRAS;
+    case SPECIES_ZAPDOS:
+        return OBJ_EVENT_GFX_ZAPDOS;
+    case SPECIES_MOLTRES:
+        return OBJ_EVENT_GFX_MOLTRES;
+    case SPECIES_ARTICUNO:
+        return OBJ_EVENT_GFX_ARTICUNO;
+    case SPECIES_MEWTWO:
+        return OBJ_EVENT_GFX_MEWTWO;
+    case SPECIES_MEW:
+        return OBJ_EVENT_GFX_MEW;
+    case SPECIES_ENTEI:
+        return OBJ_EVENT_GFX_ENTEI;
+    case SPECIES_RAIKOU:
+        return OBJ_EVENT_GFX_RAIKOU;
+    case SPECIES_SUICUNE:
+        return OBJ_EVENT_GFX_SUICUNE;
+    case SPECIES_LUGIA:
+        return OBJ_EVENT_GFX_LUGIA;
+    case SPECIES_HO_OH:
+        return OBJ_EVENT_GFX_HO_OH;
+    case SPECIES_CELEBI:
+        return OBJ_EVENT_GFX_CELEBI;
+    case SPECIES_DEOXYS:
+        return OBJ_EVENT_GFX_DEOXYS_N;
+    case SPECIES_DEOXYS_ATTACK:
+        return OBJ_EVENT_GFX_DEOXYS_A;
+    case SPECIES_DEOXYS_DEFENSE:
+        return OBJ_EVENT_GFX_DEOXYS_D;
+    case SPECIES_DEOXYS_SPEED:
+        return OBJ_EVENT_GFX_DEOXYS_N;
+    case SPECIES_PIDGEOT:
+        return OBJ_EVENT_GFX_PIDGEOT;
+    case SPECIES_OMANYTE:
+        return OBJ_EVENT_GFX_OMANYTE;
+    case SPECIES_KANGASKHAN:
+        return OBJ_EVENT_GFX_KANGASKHAN;
+    case SPECIES_NIDORAN_F:
+        return OBJ_EVENT_GFX_NIDORAN_F;
+    case SPECIES_NIDORAN_M:
+        return OBJ_EVENT_GFX_NIDORAN_M;
+    case SPECIES_NIDORINO:
+        return OBJ_EVENT_GFX_NIDORINO;
+    case SPECIES_MEOWTH:
+        return OBJ_EVENT_GFX_MEOWTH;
+    case SPECIES_SEEL:
+        return OBJ_EVENT_GFX_SEEL;
+    case SPECIES_VOLTORB:
+        return OBJ_EVENT_GFX_VOLTORB;
+    case SPECIES_SLOWPOKE:
+        return OBJ_EVENT_GFX_SLOWPOKE;
+    case SPECIES_SLOWBRO:
+        return OBJ_EVENT_GFX_SLOWBRO;
+    case SPECIES_MACHOP:
+        return OBJ_EVENT_GFX_MACHOP;
+    case SPECIES_WIGGLYTUFF:
+        return OBJ_EVENT_GFX_WIGGLYTUFF;
+    case SPECIES_DODUO:
+        return OBJ_EVENT_GFX_DODUO;
+    case SPECIES_FEAROW:
+        return OBJ_EVENT_GFX_FEAROW;
+    case SPECIES_KABUTO:
+        return OBJ_EVENT_GFX_KABUTO;
+    case SPECIES_MACHOKE:
+        return OBJ_EVENT_GFX_MACHOKE;
+    case SPECIES_SNORLAX:
+        return OBJ_EVENT_GFX_SNORLAX;
+    case SPECIES_SPEAROW:
+        return OBJ_EVENT_GFX_SPEAROW;
+    case SPECIES_CUBONE:
+        return OBJ_EVENT_GFX_CUBONE;
+    case SPECIES_POLIWRATH:
+        return OBJ_EVENT_GFX_POLIWRATH;
+    case SPECIES_CHANSEY:
+        return OBJ_EVENT_GFX_CHANSEY;
+    case SPECIES_PIKACHU:
+        return OBJ_EVENT_GFX_PIKACHU;
+    case SPECIES_JIGGLYPUFF:
+        return OBJ_EVENT_GFX_JIGGLYPUFF;
+    case SPECIES_PIDGEY:
+        return OBJ_EVENT_GFX_PIDGEY;
+    case SPECIES_CLEFAIRY:
+        return OBJ_EVENT_GFX_CLEFAIRY;
+    default:
+        return OBJ_EVENT_GFX_PIKACHU;
+    }
+}
+
+static void SpawnFollowingPokemon(void)
+{
+    struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
+    u16 species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
+    u16 graphicsId = GetFollowerGraphicsIdForSpecies(species);
+    u8 objectEventId;
+
+    objectEventId = SpawnSpecialObjectEventParameterized(graphicsId,
+                                                         MOVEMENT_TYPE_FACE_DOWN,
+                                                         OBJ_EVENT_ID_FOLLOWER,
+                                                         player->previousCoords.x,
+                                                         player->previousCoords.y,
+                                                         player->previousElevation);
+    if (objectEventId == OBJECT_EVENTS_COUNT)
+        return;
+
+    gObjectEvents[objectEventId].script = EventScript_Follower;
+    ObjectEventTurn(&gObjectEvents[objectEventId], player->facingDirection);
+}
+
+void RemoveFollowingPokemon(void)
+{
+    u8 objectEventId = GetFollowerObjectEventId();
+
+    if (objectEventId == OBJECT_EVENTS_COUNT)
+        return;
+
+    RemoveObjectEvent(&gObjectEvents[objectEventId]);
+}
+
+static void UpdateFollowerMovement(u8 movementActionId)
+{
+    struct ObjectEvent *follower = GetFollowerObject();
+
+    if (follower == NULL)
+        return;
+
+    if (movementActionId == MOVEMENT_ACTION_NONE)
+        return;
+
+    if (ObjectEventCheckHeldMovementStatus(follower) != 0)
+        ObjectEventSetHeldMovement(follower, movementActionId);
+}
+
+void UpdateFollowingPokemon(void)
+{
+    struct ObjectEvent *follower;
+    struct ObjectEvent *player;
+    u16 species;
+    u16 graphicsId;
+    u8 movementActionId;
+
+    if (!ShouldSpawnFollower())
+    {
+        RemoveFollowingPokemon();
+        return;
+    }
+
+    follower = GetFollowerObject();
+    if (follower == NULL)
+    {
+        SpawnFollowingPokemon();
+        follower = GetFollowerObject();
+    }
+
+    if (follower == NULL)
+        return;
+
+    player = &gObjectEvents[gPlayerAvatar.objectEventId];
+    if (follower->currentCoords.x != player->previousCoords.x
+        || follower->currentCoords.y != player->previousCoords.y)
+        MoveObjectEventToMapCoords(follower, player->previousCoords.x, player->previousCoords.y);
+
+    species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
+    graphicsId = GetFollowerGraphicsIdForSpecies(species);
+    if (follower->graphicsId != graphicsId)
+        ObjectEventSetGraphicsId(follower, graphicsId);
+
+    movementActionId = PlayerGetCopyableMovement();
+    UpdateFollowerMovement(movementActionId);
 }
 
 static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
@@ -2516,6 +2739,9 @@ static const u8 *GetObjectEventScriptPointerByLocalIdAndMap(u8 localId, u8 mapNu
 
 const u8 *GetObjectEventScriptPointerByObjectEventId(u8 objectEventId)
 {
+    if (gObjectEvents[objectEventId].localId == OBJ_EVENT_ID_FOLLOWER)
+        return gObjectEvents[objectEventId].script;
+
     return GetObjectEventScriptPointerByLocalIdAndMap(gObjectEvents[objectEventId].localId, gObjectEvents[objectEventId].mapNum, gObjectEvents[objectEventId].mapGroup);
 }
 
@@ -2532,6 +2758,9 @@ static u16 GetObjectEventFlagIdByLocalIdAndMap(u8 localId, u8 mapNum, u8 mapGrou
 
 static u16 GetObjectEventFlagIdByObjectEventId(u8 objectEventId)
 {
+    if (gObjectEvents[objectEventId].localId == OBJ_EVENT_ID_FOLLOWER)
+        return 0;
+
     return GetObjectEventFlagIdByLocalIdAndMap(gObjectEvents[objectEventId].localId, gObjectEvents[objectEventId].mapNum, gObjectEvents[objectEventId].mapGroup);
 }
 

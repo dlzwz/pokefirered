@@ -815,6 +815,7 @@ static void PlayerSetAnimId(u8 movementActionId, u8 copyableMovement)
         PlayerSetCopyableMovement(copyableMovement);
         if (!ObjectEventSetHeldMovement(&gObjectEvents[gPlayerAvatar.objectEventId], movementActionId))
             QuestLogRecordPlayerStep(movementActionId);
+        UpdateFollowingPokemon();
     }
 }
 
