@@ -759,6 +759,7 @@ void UpdatePlayerAvatarTransitionState(void)
                 gPlayerAvatar.tileTransitionState = T_TILE_CENTER;
         }
     }
+    UpdateFollowingPokemon();
 }
 
 static bool8 PlayerAnimIsMultiFrameStationary(void)

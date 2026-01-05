@@ -86,6 +86,12 @@ static u8 GetFollowerObjectEventId(void);
 static u16 GetFollowerGraphicsIdForSpecies(u16 species);
 static void SpawnFollowingPokemon(void);
 static void UpdateFollowerMovement(struct ObjectEvent *follower, s16 targetX, s16 targetY);
+
+static bool8 sFollowerTrackingInitialized;
+static s16 sFollowerTargetX;
+static s16 sFollowerTargetY;
+static s16 sFollowerLastPlayerX;
+static s16 sFollowerLastPlayerY;
 static bool8 IsElevationMismatchAt(u8 elevation, s16 x, s16 y);
 static bool8 AreElevationsCompatible(u8 a, u8 b);
 static void ObjectCB_CameraObject(struct Sprite *);
@@ -1881,7 +1887,18 @@ void SpawnObjectEventsOnReturnToField(s16 x, s16 y)
 
 static bool8 ShouldSpawnFollower(void)
 {
-    return gPlayerPartyCount > 0;
+    u8 i;
+
+    if (gPlayerPartyCount == 0)
+        return FALSE;
+
+    for (i = 0; i < gPlayerPartyCount; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_PIKACHU)
+            return TRUE;
+    }
+
+    return FALSE;
 }
 
 static u8 GetFollowerObjectEventId(void)
@@ -1918,91 +1935,8 @@ bool32 IsFollowerVisible(void)
 
 static u16 GetFollowerGraphicsIdForSpecies(u16 species)
 {
-    switch (species)
-    {
-    case SPECIES_PSYDUCK:
-        return OBJ_EVENT_GFX_PSYDUCK;
-    case SPECIES_LAPRAS:
-        return OBJ_EVENT_GFX_LAPRAS;
-    case SPECIES_ZAPDOS:
-        return OBJ_EVENT_GFX_ZAPDOS;
-    case SPECIES_MOLTRES:
-        return OBJ_EVENT_GFX_MOLTRES;
-    case SPECIES_ARTICUNO:
-        return OBJ_EVENT_GFX_ARTICUNO;
-    case SPECIES_MEWTWO:
-        return OBJ_EVENT_GFX_MEWTWO;
-    case SPECIES_MEW:
-        return OBJ_EVENT_GFX_MEW;
-    case SPECIES_ENTEI:
-        return OBJ_EVENT_GFX_ENTEI;
-    case SPECIES_RAIKOU:
-        return OBJ_EVENT_GFX_RAIKOU;
-    case SPECIES_SUICUNE:
-        return OBJ_EVENT_GFX_SUICUNE;
-    case SPECIES_LUGIA:
-        return OBJ_EVENT_GFX_LUGIA;
-    case SPECIES_HO_OH:
-        return OBJ_EVENT_GFX_HO_OH;
-    case SPECIES_CELEBI:
-        return OBJ_EVENT_GFX_CELEBI;
-    case SPECIES_DEOXYS:
-        return OBJ_EVENT_GFX_DEOXYS_N;
-    case SPECIES_PIDGEOT:
-        return OBJ_EVENT_GFX_PIDGEOT;
-    case SPECIES_OMANYTE:
-        return OBJ_EVENT_GFX_OMANYTE;
-    case SPECIES_KANGASKHAN:
-        return OBJ_EVENT_GFX_KANGASKHAN;
-    case SPECIES_NIDORAN_F:
-        return OBJ_EVENT_GFX_NIDORAN_F;
-    case SPECIES_NIDORAN_M:
-        return OBJ_EVENT_GFX_NIDORAN_M;
-    case SPECIES_NIDORINO:
-        return OBJ_EVENT_GFX_NIDORINO;
-    case SPECIES_MEOWTH:
-        return OBJ_EVENT_GFX_MEOWTH;
-    case SPECIES_SEEL:
-        return OBJ_EVENT_GFX_SEEL;
-    case SPECIES_VOLTORB:
-        return OBJ_EVENT_GFX_VOLTORB;
-    case SPECIES_SLOWPOKE:
-        return OBJ_EVENT_GFX_SLOWPOKE;
-    case SPECIES_SLOWBRO:
-        return OBJ_EVENT_GFX_SLOWBRO;
-    case SPECIES_MACHOP:
-        return OBJ_EVENT_GFX_MACHOP;
-    case SPECIES_WIGGLYTUFF:
-        return OBJ_EVENT_GFX_WIGGLYTUFF;
-    case SPECIES_DODUO:
-        return OBJ_EVENT_GFX_DODUO;
-    case SPECIES_FEAROW:
-        return OBJ_EVENT_GFX_FEAROW;
-    case SPECIES_KABUTO:
-        return OBJ_EVENT_GFX_KABUTO;
-    case SPECIES_MACHOKE:
-        return OBJ_EVENT_GFX_MACHOKE;
-    case SPECIES_SNORLAX:
-        return OBJ_EVENT_GFX_SNORLAX;
-    case SPECIES_SPEAROW:
-        return OBJ_EVENT_GFX_SPEAROW;
-    case SPECIES_CUBONE:
-        return OBJ_EVENT_GFX_CUBONE;
-    case SPECIES_POLIWRATH:
-        return OBJ_EVENT_GFX_POLIWRATH;
-    case SPECIES_CHANSEY:
-        return OBJ_EVENT_GFX_CHANSEY;
-    case SPECIES_PIKACHU:
-        return OBJ_EVENT_GFX_PIKACHU;
-    case SPECIES_JIGGLYPUFF:
-        return OBJ_EVENT_GFX_JIGGLYPUFF;
-    case SPECIES_PIDGEY:
-        return OBJ_EVENT_GFX_PIDGEY;
-    case SPECIES_CLEFAIRY:
-        return OBJ_EVENT_GFX_CLEFAIRY;
-    default:
-        return OBJ_EVENT_GFX_PIKACHU;
-    }
+    (void)species;
+    return OBJ_EVENT_GFX_PIKACHU;
 }
 
 static void SpawnFollowingPokemon(void)
@@ -2026,6 +1960,8 @@ static void SpawnFollowingPokemon(void)
         return;
 
     ObjectEventTurn(&gObjectEvents[objectEventId], player->facingDirection);
+    sFollowerTargetX = followerX;
+    sFollowerTargetY = followerY;
 }
 
 void RemoveFollowingPokemon(void)
@@ -2033,9 +1969,13 @@ void RemoveFollowingPokemon(void)
     u8 objectEventId = GetFollowerObjectEventId();
 
     if (objectEventId == OBJECT_EVENTS_COUNT)
+    {
+        sFollowerTrackingInitialized = FALSE;
         return;
+    }
 
     RemoveObjectEvent(&gObjectEvents[objectEventId]);
+    sFollowerTrackingInitialized = FALSE;
 }
 
 static void UpdateFollowerMovement(struct ObjectEvent *follower, s16 targetX, s16 targetY)
@@ -2066,8 +2006,6 @@ void UpdateFollowingPokemon(void)
 {
     struct ObjectEvent *follower;
     struct ObjectEvent *player;
-    u16 species;
-    u16 graphicsId;
 
     if (!ShouldSpawnFollower())
     {
@@ -2086,12 +2024,25 @@ void UpdateFollowingPokemon(void)
         return;
 
     player = &gObjectEvents[gPlayerAvatar.objectEventId];
-    UpdateFollowerMovement(follower, player->previousCoords.x, player->previousCoords.y);
+    if (!sFollowerTrackingInitialized)
+    {
+        sFollowerLastPlayerX = player->currentCoords.x;
+        sFollowerLastPlayerY = player->currentCoords.y;
+        sFollowerTargetX = follower->currentCoords.x;
+        sFollowerTargetY = follower->currentCoords.y;
+        sFollowerTrackingInitialized = TRUE;
+    }
 
-    species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
-    graphicsId = GetFollowerGraphicsIdForSpecies(species);
-    if (follower->graphicsId != graphicsId)
-        ObjectEventSetGraphicsId(follower, graphicsId);
+    if (player->currentCoords.x != sFollowerLastPlayerX
+        || player->currentCoords.y != sFollowerLastPlayerY)
+    {
+        sFollowerTargetX = sFollowerLastPlayerX;
+        sFollowerTargetY = sFollowerLastPlayerY;
+        sFollowerLastPlayerX = player->currentCoords.x;
+        sFollowerLastPlayerY = player->currentCoords.y;
+    }
+
+    UpdateFollowerMovement(follower, sFollowerTargetX, sFollowerTargetY);
 }
 
 static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
