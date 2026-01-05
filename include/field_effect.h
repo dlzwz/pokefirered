@@ -26,7 +26,6 @@ void ReturnToFieldFromFlyMapSelect(void);
 void MultiplyInvertedPaletteRGBComponents(u16 i, u8 r, u8 g, u8 b);
 void SpriteCB_PopOutOfAsh(struct Sprite *sprite);
 void SpriteCB_AshLaunch(struct Sprite *sprite);
-void FieldEffectFreePaletteIfUnused(u8 paletteNum);
 void FieldEffectActiveListClear(void);
 void FieldCallback_UseFly(void);
 
