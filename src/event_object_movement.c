@@ -1827,11 +1827,11 @@ void UpdateFollowingPokemon(void)
             .flagId = 0,
             .x = gSaveBlock1Ptr->pos.x,
             .y = gSaveBlock1Ptr->pos.y,
-            .objUnion.normal.elevation = gObjectEvents[gPlayerAvatar.objectEventId].active
-                ? gObjectEvents[gPlayerAvatar.objectEventId].currentElevation
-                : 3,
-            .objUnion.normal.movementType = MOVEMENT_TYPE_FOLLOW_PLAYER,
         };
+        template.objUnion.normal.elevation = gObjectEvents[gPlayerAvatar.objectEventId].active
+            ? gObjectEvents[gPlayerAvatar.objectEventId].currentElevation
+            : 3;
+        template.objUnion.normal.movementType = MOVEMENT_TYPE_FOLLOW_PLAYER;
 
         if ((objId = SpawnSpecialObjectEvent(&template)) >= OBJECT_EVENTS_COUNT)
             return;
