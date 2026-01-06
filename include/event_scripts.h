@@ -1260,5 +1260,20 @@ extern const u8 TradeCenter_EventScript_Chair0[];
 extern const u8 TradeCenter_EventScript_Chair1[];
 extern const u8 TradeCenter_ConfirmLeaveRoom[];
 extern const u8 TradeCenter_TerminateLink[];
+extern const u8 EventScript_PikachuFollower_BikeShop[];
+extern const u8 EventScript_PikachuFollower_VictoryRoad[];
+extern const u8 EventScript_PikachuFollower_Rain[];
+extern const u8 EventScript_PikachuFollower_Water[];
+extern const u8 EventScript_PikachuFollower_Sand[];
+extern const u8 EventScript_PikachuFollower_Grass[];
+extern const u8 EventScript_PikachuFollower_Ice[];
+extern const u8 EventScript_PikachuFollower_Happy[];
+extern const u8 EventScript_PikachuFollower_Joy[];
+extern const u8 EventScript_PikachuFollower_Cuddle[];
+extern const u8 EventScript_PikachuFollower_Guard[];
+extern const u8 EventScript_PikachuFollower_Patient[];
+extern const u8 EventScript_PikachuFollower_Relaxing[];
+extern const u8 EventScript_PikachuFollower_Adoration[];
+extern const u8 EventScript_PikachuFollower_Unhappy[];
 
 #endif //GUARD_EVENT_SCRIPTS_H
