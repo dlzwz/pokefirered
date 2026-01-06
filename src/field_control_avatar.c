@@ -35,6 +35,7 @@
 #include "constants/items.h"
 #include "constants/maps.h"
 #include "constants/metatile_behaviors.h"
+#include "constants/weather.h"
 
 #define SIGNPOST_POKECENTER 0
 #define SIGNPOST_POKEMART 1
@@ -461,7 +462,7 @@ static const u8 *GetPikachuFollowerScript(void)
     if (GetCurrentMapMusic() == MUS_VICTORY_ROAD)
         return EventScript_PikachuFollower_VictoryRoad;
 
-    if (GetCurrentWeather() == WEATHER_RAIN)
+    if (GetCurrentWeather() == WEATHER_RAIN || GetCurrentWeather() == WEATHER_RAIN_THUNDERSTORM)
         return EventScript_PikachuFollower_Rain;
 
     if (follower != NULL)
