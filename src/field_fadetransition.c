@@ -799,6 +799,7 @@ static void Task_StairWarp(u8 taskId)
     case 0:
         LockPlayerFieldControls();
         FreezeObjectEvents();
+        RemoveFollowingPokemon();
         CameraObjectReset2();
         data[0]++;
         break;
