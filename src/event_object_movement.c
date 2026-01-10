@@ -4576,6 +4576,10 @@ static bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, s
 
 static bool8 MovementType_FollowPlayer_Moving(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
+    // Speed up animation when player is running
+    if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_DASH) && sprite->animDelayCounter > 0 && !sprite->animPaused)
+        sprite->animDelayCounter--;
+
     if (sMovementActionFuncs[objectEvent->movementActionId][sprite->data[2]](objectEvent, sprite))
     {
         objectEvent->movementActionId = MOVEMENT_ACTION_NONE;

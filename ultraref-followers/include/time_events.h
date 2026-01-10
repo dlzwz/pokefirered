@@ -1,6 +1,0 @@
-#ifndef GUARD_TIME_EVENTS_H
-#define GUARD_TIME_EVENTS_H
-
-
-
-#endif // GUARD_TIME_EVENTS_H
