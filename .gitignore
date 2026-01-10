@@ -66,5 +66,3 @@ build-cmake-*/
 .cache/
 CMakeLists.txt
 compile_commands.json
-FireRedUltra/
-ultraref-followers/
