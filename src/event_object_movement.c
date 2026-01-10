@@ -4576,6 +4576,10 @@ static bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, s
 
 static bool8 MovementType_FollowPlayer_Moving(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
+    // Speed up animation when player is running
+    if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_DASH) && sprite->animDelayCounter > 0 && !sprite->animPaused)
+        sprite->animDelayCounter--;
+
     if (sMovementActionFuncs[objectEvent->movementActionId][sprite->data[2]](objectEvent, sprite))
     {
         objectEvent->movementActionId = MOVEMENT_ACTION_NONE;
@@ -4584,6 +4588,10 @@ static bool8 MovementType_FollowPlayer_Moving(struct ObjectEvent *objectEvent, s
         objectEvent->facingDirectionLocked = FALSE;
         if (sprite->data[1])
             sprite->data[1] = 1;
+    }
+    else if ((sprite->data[5] & 7) == 2)
+    {
+        sprite->y2 ^= -1;
     }
     return FALSE;
 }
@@ -4600,6 +4608,10 @@ static bool8 FollowablePlayerMovement_Idle(struct ObjectEvent *objectEvent, stru
     else if (ObjectEventExecSingleMovementAction(objectEvent, sprite))
     {
         objectEvent->singleMovementActive = 0;
+    }
+    else if ((sprite->data[3] & 7) == 2)
+    {
+        sprite->y2 ^= -1;
     }
     return FALSE;
 }
@@ -4636,6 +4648,7 @@ static bool8 FollowablePlayerMovement_Step(struct ObjectEvent *objectEvent, stru
         ObjectEventSetSingleMovement(objectEvent, sprite, MOVEMENT_ACTION_SET_VISIBLE);
         objectEvent->singleMovementActive = TRUE;
         sprite->data[1] = 2;
+        sprite->y2 = 0;
         return TRUE;
     }
     else if (x == targetX && y == targetY)
@@ -4675,6 +4688,7 @@ static bool8 FollowablePlayerMovement_Step(struct ObjectEvent *objectEvent, stru
     else
     {
         ObjectEventSetSingleMovement(objectEvent, sprite, GetWalkNormalMovementAction(direction));
+        sprite->y2 = -1;
     }
     sprite->data[2] = 0;
     objectEvent->singleMovementActive = TRUE;

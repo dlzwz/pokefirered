@@ -12,6 +12,7 @@
 #include "field_player_avatar.h"
 #include "field_poison.h"
 #include "field_specials.h"
+#include "field_weather.h"
 #include "item.h"
 #include "item_menu.h"
 #include "link.h"
@@ -20,8 +21,10 @@
 #include "overworld.h"
 #include "renewable_hidden_items.h"
 #include "quest_log.h"
+#include "random.h"
 #include "safari_zone.h"
 #include "script.h"
+#include "sound.h"
 #include "start_menu.h"
 #include "trainer_see.h"
 #include "vs_seeker.h"
@@ -32,6 +35,7 @@
 #include "constants/items.h"
 #include "constants/maps.h"
 #include "constants/metatile_behaviors.h"
+#include "constants/weather.h"
 
 #define SIGNPOST_POKECENTER 0
 #define SIGNPOST_POKEMART 1
@@ -48,6 +52,7 @@ static u16 GetPlayerCurMetatileBehavior(void);
 static bool8 TryStartInteractionScript(struct MapPosition * position, u16 metatileBehavior, u8 playerDirection);
 static const u8 *GetInteractionScript(struct MapPosition * position, u8 metatileBehavior, u8 playerDirection);
 static const u8 *GetInteractedObjectEventScript(struct MapPosition * position, u8 metatileBehavior, u8 playerDirection);
+static const u8 *GetPikachuFollowerScript(void);
 static const u8 *GetInteractedBackgroundEventScript(struct MapPosition * position, u8 metatileBehavior, u8 playerDirection);
 static const struct BgEvent *GetBackgroundEventAtPosition(struct MapHeader *, u16, u16, u8);
 static const u8 *GetInteractedMetatileScript(struct MapPosition * position, u8 metatileBehavior, u8 playerDirection);
@@ -431,6 +436,50 @@ const u8 *GetInteractedLinkPlayerScript(struct MapPosition *position, u8 metatil
     return GetObjectEventScriptPointerByObjectEventId(objectEventId);
 }
 
+static const u8 *const sPikachuFollowerGenericScripts[] =
+{
+    EventScript_PikachuFollower_Happy,
+    EventScript_PikachuFollower_Joy,
+    EventScript_PikachuFollower_Cuddle,
+    EventScript_PikachuFollower_Guard,
+    EventScript_PikachuFollower_Patient,
+    EventScript_PikachuFollower_Relaxing,
+    EventScript_PikachuFollower_Adoration,
+    EventScript_PikachuFollower_Unhappy,
+};
+
+static const u8 *GetPikachuFollowerScript(void)
+{
+    const struct ObjectEvent *follower = GetFollowerObject();
+    u8 metatileBehavior = follower
+        ? MapGridGetMetatileBehaviorAt(follower->currentCoords.x, follower->currentCoords.y)
+        : 0;
+
+    if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_CERULEAN_CITY_BIKE_SHOP)
+        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_CERULEAN_CITY_BIKE_SHOP))
+        return EventScript_PikachuFollower_BikeShop;
+
+    if (GetCurrentMapMusic() == MUS_VICTORY_ROAD)
+        return EventScript_PikachuFollower_VictoryRoad;
+
+    if (GetCurrentWeather() == WEATHER_RAIN || GetCurrentWeather() == WEATHER_RAIN_THUNDERSTORM)
+        return EventScript_PikachuFollower_Rain;
+
+    if (follower != NULL)
+    {
+        if (MetatileBehavior_IsSand(metatileBehavior))
+            return EventScript_PikachuFollower_Sand;
+        if (MetatileBehavior_IsPokeGrass(metatileBehavior))
+            return EventScript_PikachuFollower_Grass;
+        if (MetatileBehavior_IsIce(metatileBehavior))
+            return EventScript_PikachuFollower_Ice;
+        if (MetatileBehavior_IsSandOrShallowFlowingWater(metatileBehavior))
+            return EventScript_PikachuFollower_Water;
+    }
+
+    return sPikachuFollowerGenericScripts[Random() % ARRAY_COUNT(sPikachuFollowerGenericScripts)];
+}
+
 static const u8 *GetInteractedObjectEventScript(struct MapPosition *position, u8 metatileBehavior, u8 direction)
 {
     u8 objectEventId;
@@ -454,6 +503,9 @@ static const u8 *GetInteractedObjectEventScript(struct MapPosition *position, u8
     gSelectedObjectEvent = objectEventId;
     gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId;
     gSpecialVar_Facing = direction;
+
+    if (gObjectEvents[objectEventId].localId == OBJ_EVENT_ID_FOLLOWER)
+        return GetPikachuFollowerScript();
 
     script = GetObjectEventScriptPointerByObjectEventId(objectEventId);
 

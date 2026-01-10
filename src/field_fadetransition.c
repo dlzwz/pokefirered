@@ -588,6 +588,7 @@ void DoFallWarp(void)
 void DoEscalatorWarp(u8 metatileBehavior)
 {
     LockPlayerFieldControls();
+    RemoveFollowingPokemon();
     StartEscalatorWarp(metatileBehavior, 10);
 }
 
@@ -799,6 +800,7 @@ static void Task_StairWarp(u8 taskId)
     case 0:
         LockPlayerFieldControls();
         FreezeObjectEvents();
+        RemoveFollowingPokemon();
         CameraObjectReset2();
         data[0]++;
         break;
