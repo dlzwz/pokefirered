@@ -11,9 +11,12 @@ CURRENT STATE
   - Surfing
   - Riding a bicycle
   - Entering buildings
-  - Using stairs (up and down)
+  - Using stairs (up/down)
+  - Using escalators
 
 CURRENT TASK
-- Despawn Pikachu follower during escalator transitions.
-- Escalators use forced movement similar to stairs/building entry.
-- Current build does not despawn follower when using escalators.
+- Implement follower spawn and despawn animations to match FireRedUltra.
+- In FireRedUltra, follower does not instantly appear or disappear.
+- A Poké Ball graphic briefly appears on the ground with an white effect on top of the follower sprite to shrink or grow it out or from the Poké Ball.
+- The follower appears/grows from or vanishes/shrinks into the Poké Ball.
+- This effect occurs both on spawn and on despawn.

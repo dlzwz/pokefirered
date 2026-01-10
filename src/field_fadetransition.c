@@ -588,6 +588,7 @@ void DoFallWarp(void)
 void DoEscalatorWarp(u8 metatileBehavior)
 {
     LockPlayerFieldControls();
+    RemoveFollowingPokemon();
     StartEscalatorWarp(metatileBehavior, 10);
 }
 
