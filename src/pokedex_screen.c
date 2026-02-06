@@ -2678,8 +2678,6 @@ void DexScreen_PrintMonCategory(u8 windowId, u16 species, u8 x, u8 y)
     if (DexScreen_GetSetPokedexFlag(species, FLAG_GET_CAUGHT, FALSE))
     {
 #if REVISION == 0
-        while ((categoryName[index] != CHAR_SPACE) && (index < 11))
-#else
         while ((categoryName[index] != EOS) && (index < 11))
 #endif
         {
