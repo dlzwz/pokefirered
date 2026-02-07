@@ -57,6 +57,7 @@
 #include "tm_case.h"
 #include "trade.h"
 #include "union_room.h"
+#include "field_specials.h"
 #include "constants/battle.h"
 #include "constants/easy_chat.h"
 #include "constants/field_effects.h"
@@ -2592,6 +2593,103 @@ static void RemoveLevelUpStatsWindow(void)
     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
 }
 
+// Returns the pre-evolution species, or SPECIES_NONE if there is none
+static u16 GetPreEvolutionSpecies(u16 species)
+{
+    extern const struct Evolution gEvolutionTable[][EVOS_PER_MON];
+    u16 i;
+    s32 j;
+
+    for (i = 1; i < NUM_SPECIES; i++)
+    {
+        for (j = 0; j < EVOS_PER_MON; j++)
+        {
+            if (gEvolutionTable[i][j].targetSpecies == species)
+                return i;
+        }
+    }
+    return SPECIES_NONE;
+}
+
+// Returns TRUE if the species or any of its pre-evolutions can learn the move through level-up
+static bool8 SpeciesCanLearnMoveByLevelUp(u16 species, u16 move)
+{
+    s32 i;
+    u16 current;
+
+    for (current = species; current != SPECIES_NONE; current = GetPreEvolutionSpecies(current))
+    {
+        for (i = 0; gLevelUpLearnsets[current][i] != LEVEL_UP_END; i++)
+        {
+            u16 learnsetMove = gLevelUpLearnsets[current][i] & LEVEL_UP_MOVE_ID;
+            if (learnsetMove == move)
+                return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// Returns TRUE if the field move should be shown in the submenu based on context
+static bool8 ShouldShowFieldMoveInSubmenu(u8 fieldMoveIndex)
+{
+    switch (fieldMoveIndex)
+    {
+    // Moves that should never appear in submenu (overworld interaction only)
+    case FIELD_MOVE_SURF:
+    case FIELD_MOVE_STRENGTH:
+    case FIELD_MOVE_WATERFALL:
+        return FALSE;
+
+    // Cut: only show when a cuttable tree or grass is nearby, or at Dotted Hole
+    case FIELD_MOVE_CUT:
+        return FALSE;
+
+    // Flash: only in dark caves that haven't been lit yet
+    case FIELD_MOVE_FLASH:
+        if (gMapHeader.cave == TRUE && !FlagGet(FLAG_SYS_FLASH_ACTIVE))
+            return TRUE;
+        return FALSE;
+
+    // Rock Smash: never shown in submenu (overworld interaction only)
+    case FIELD_MOVE_ROCK_SMASH:
+        return FALSE;
+
+    // Fly: only outdoors
+    case FIELD_MOVE_FLY:
+        return Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType);
+
+    // Teleport: only outdoors
+    case FIELD_MOVE_TELEPORT:
+        return Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType);
+
+    // Dig: only where escape rope works
+    case FIELD_MOVE_DIG:
+        return CanUseEscapeRopeOnCurrMap();
+
+    // Sweet Scent: only when standing on a land or water encounter tile
+    case FIELD_MOVE_SWEET_SCENT:
+    {
+        s16 x, y;
+
+        PlayerGetDestCoords(&x, &y);
+
+        if (MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_ENCOUNTER_TYPE) == TILE_ENCOUNTER_LAND)
+            return TRUE;
+        if (MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_ENCOUNTER_TYPE) == TILE_ENCOUNTER_WATER)
+            return TRUE;
+        return FALSE;
+    }
+
+    // Milk Drink and Soft Boiled: always show if mon knows the move
+    case FIELD_MOVE_MILK_DRINK:
+    case FIELD_MOVE_SOFT_BOILED:
+        return TRUE;
+
+    default:
+        return TRUE;
+    }
+}
+
 static void PartyMenu_Oak_PrintText(u8 windowId, const u8 *str)
 {
     StringExpandPlaceholders(gStringVar4, str);
@@ -2966,24 +3064,94 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
 
     sPartyMenuInternal->numActions = 0;
     AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, CURSOR_OPTION_SUMMARY);
-    // Add field moves to action list
+
+    // Add field moves to action list based on context
     for (i = 0; i < MAX_MON_MOVES; ++i)
     {
         for (j = 0; sFieldMoves[j] != FIELD_MOVE_END; ++j)
         {
             if (GetMonData(&mons[slotId], i + MON_DATA_MOVE1) == sFieldMoves[j])
             {
-                if (sFieldMoves[j] != MOVE_FLY) // If Mon already knows FLY, prevent it from being added to action list
-                    if (sFieldMoves[j] != MOVE_FLASH) // If Mon already knows FLASH, prevent it from being added to action list
-                        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, j + CURSOR_OPTION_FIELD_MOVES);
+                // Skip these moves here - they are handled separately below
+                // to allow Pokemon that can learn them to use them without knowing them
+                if (sFieldMoves[j] == MOVE_FLY || sFieldMoves[j] == MOVE_FLASH
+                    || sFieldMoves[j] == MOVE_DIG || sFieldMoves[j] == MOVE_TELEPORT
+                    || sFieldMoves[j] == MOVE_SWEET_SCENT || sFieldMoves[j] == MOVE_ROCK_SMASH
+                    || sFieldMoves[j] == MOVE_CUT)
+                    break;
+
+                // Only add the field move if context is appropriate
+                if (ShouldShowFieldMoveInSubmenu(j))
+                    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, j + CURSOR_OPTION_FIELD_MOVES);
                 break;
             }
         }
     }
-    if (sPartyMenuInternal->numActions < 5 && CanMonLearnTMHM(&mons[slotId], ITEM_HM02 - ITEM_TM01)) // If Mon can learn HM02 and action list consists of < 4 moves, add FLY to action list
+
+    // If Mon can learn HM02 (Fly), has badge, has HM, and context is appropriate, add FLY to action list
+    if (sPartyMenuInternal->numActions < 5
+        && ShouldShowFieldMoveInSubmenu(FIELD_MOVE_FLY)
+        && FlagGet(FLAG_BADGE03_GET)
+        && CheckBagHasItem(ITEM_HM02, 1)
+        && CanMonLearnTMHM(&mons[slotId], ITEM_HM02 - ITEM_TM01))
+    {
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_FLY + CURSOR_OPTION_FIELD_MOVES);
-    if (sPartyMenuInternal->numActions < 5 && CanMonLearnTMHM(&mons[slotId], ITEM_HM05 - ITEM_TM01)) // If Mon can learn HM05 and action list consists of < 4 moves, add FLASH to action list
+    }
+
+    // If Mon can learn HM05 (Flash), has badge, has HM, and context is appropriate, add FLASH to action list
+    if (sPartyMenuInternal->numActions < 5
+        && ShouldShowFieldMoveInSubmenu(FIELD_MOVE_FLASH)
+        && FlagGet(FLAG_BADGE01_GET)
+        && CheckBagHasItem(ITEM_HM05, 1)
+        && CanMonLearnTMHM(&mons[slotId], ITEM_HM05 - ITEM_TM01))
+    {
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_FLASH + CURSOR_OPTION_FIELD_MOVES);
+    }
+
+    // If Mon can learn TM28 (Dig), has TM in bag, and context is appropriate, add DIG to action list
+    if (sPartyMenuInternal->numActions < 5
+        && ShouldShowFieldMoveInSubmenu(FIELD_MOVE_DIG)
+        && CheckBagHasItem(ITEM_TM28, 1)
+        && CanMonLearnTMHM(&mons[slotId], ITEM_TM28 - ITEM_TM01))
+    {
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_DIG + CURSOR_OPTION_FIELD_MOVES);
+    }
+
+    // If Mon can learn Teleport via level-up and context is appropriate, add TELEPORT to action list
+    if (sPartyMenuInternal->numActions < 5
+        && ShouldShowFieldMoveInSubmenu(FIELD_MOVE_TELEPORT)
+        && SpeciesCanLearnMoveByLevelUp(GetMonData(&mons[slotId], MON_DATA_SPECIES, NULL), MOVE_TELEPORT))
+    {
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_TELEPORT + CURSOR_OPTION_FIELD_MOVES);
+    }
+
+    // If Mon can learn Sweet Scent via level-up and context is appropriate, add SWEET_SCENT to action list
+    if (sPartyMenuInternal->numActions < 5
+        && ShouldShowFieldMoveInSubmenu(FIELD_MOVE_SWEET_SCENT)
+        && SpeciesCanLearnMoveByLevelUp(GetMonData(&mons[slotId], MON_DATA_SPECIES, NULL), MOVE_SWEET_SCENT))
+    {
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_SWEET_SCENT + CURSOR_OPTION_FIELD_MOVES);
+    }
+
+    // If Mon can learn HM06 (Rock Smash), has badge, has HM, and context is appropriate, add ROCK_SMASH to action list
+    if (sPartyMenuInternal->numActions < 5
+        && ShouldShowFieldMoveInSubmenu(FIELD_MOVE_ROCK_SMASH)
+        && FlagGet(FLAG_BADGE06_GET)
+        && CheckBagHasItem(ITEM_HM06, 1)
+        && CanMonLearnTMHM(&mons[slotId], ITEM_HM06 - ITEM_TM01))
+    {
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_ROCK_SMASH + CURSOR_OPTION_FIELD_MOVES);
+    }
+
+    // If Mon can learn HM01 (Cut), has badge, has HM, and we're at Dotted Hole, add CUT to action list
+    if (sPartyMenuInternal->numActions < 5
+        && CutMoveRuinValleyCheck()
+        && FlagGet(FLAG_BADGE02_GET)
+        && CheckBagHasItem(ITEM_HM01, 1)
+        && CanMonLearnTMHM(&mons[slotId], ITEM_HM01 - ITEM_TM01))
+    {
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, FIELD_MOVE_CUT + CURSOR_OPTION_FIELD_MOVES);
+    }
 
     if (GetMonData(&mons[1], MON_DATA_SPECIES) != SPECIES_NONE)
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, CURSOR_OPTION_SWITCH);
