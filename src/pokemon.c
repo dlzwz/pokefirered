@@ -36,6 +36,7 @@
 #include "constants/hold_effects.h"
 #include "constants/battle_move_effects.h"
 #include "constants/union_room.h"
+#include "level_caps.h"
 
 #define SPECIES_TO_HOENN(name)      [SPECIES_##name - 1] = HOENN_DEX_##name
 #define SPECIES_TO_NATIONAL(name)   [SPECIES_##name - 1] = NATIONAL_DEX_##name
@@ -4162,7 +4163,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
 
             // Rare Candy
             if ((itemEffect[cmdIndex] & ITEM3_LEVEL_UP)
-             && GetMonData(mon, MON_DATA_LEVEL, NULL) != MAX_LEVEL)
+             && GetMonData(mon, MON_DATA_LEVEL, NULL) < GetCurrentLevelCap())
             {
                 data = gExperienceTables[gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES, NULL)].growthRate][GetMonData(mon, MON_DATA_LEVEL, NULL) + 1];
                 SetMonData(mon, MON_DATA_EXP, &data);
@@ -4652,7 +4653,7 @@ bool8 PokemonItemUseNoEffect(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mo
 
             // Rare Candy
             if ((itemEffect[cmdIndex] & ITEM3_LEVEL_UP)
-             && GetMonData(mon, MON_DATA_LEVEL, NULL) != MAX_LEVEL)
+             && GetMonData(mon, MON_DATA_LEVEL, NULL) < GetCurrentLevelCap())
                 retVal = FALSE;
 
             // Cure status
@@ -5700,13 +5701,19 @@ bool8 TryIncrementMonLevel(struct Pokemon *mon)
     u8 level = GetMonData(mon, MON_DATA_LEVEL, NULL);
     u8 newLevel = level + 1;
     u32 exp = GetMonData(mon, MON_DATA_EXP, NULL);
+    u8 levelCap = GetCurrentLevelCap();
 
-    if (level < MAX_LEVEL)
+    if (level < levelCap)
     {
+        // Cap experience at level cap's experience threshold
+        if (exp > gExperienceTables[gSpeciesInfo[species].growthRate][levelCap])
+        {
+            exp = gExperienceTables[gSpeciesInfo[species].growthRate][levelCap];
+            SetMonData(mon, MON_DATA_EXP, &exp);
+        }
         if (exp > gExperienceTables[gSpeciesInfo[species].growthRate][newLevel])
         {
             SetMonData(mon, MON_DATA_LEVEL, &newLevel);
-            SetMonExpWithMaxLevelCheck(mon, species, newLevel, exp);
             return TRUE;
         }
         else
@@ -5714,7 +5721,12 @@ bool8 TryIncrementMonLevel(struct Pokemon *mon)
     }
     else
     {
-        SetMonExpWithMaxLevelCheck(mon, species, level, exp);
+        // Cap experience at level cap's experience threshold
+        if (exp > gExperienceTables[gSpeciesInfo[species].growthRate][levelCap])
+        {
+            exp = gExperienceTables[gSpeciesInfo[species].growthRate][levelCap];
+            SetMonData(mon, MON_DATA_EXP, &exp);
+        }
         return FALSE;
     }
 }
