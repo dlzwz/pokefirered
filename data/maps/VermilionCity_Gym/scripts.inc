@@ -205,6 +205,11 @@ VermilionCity_Gym_EventScript_SetBeamsOn::
 
 VermilionCity_Gym_EventScript_LtSurge::
 	famechecker FAMECHECKER_LTSURGE, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
+	goto_if_set FLAG_DEFEATED_LT_SURGE, VermilionCity_Gym_EventScript_LtSurgeBattle
+	getpartysize
+	compare VAR_RESULT, 3
+	goto_if_gt VermilionCity_Gym_EventScript_LtSurgePartyReject
+VermilionCity_Gym_EventScript_LtSurgeBattle::
 	trainerbattle_single TRAINER_LEADER_LT_SURGE, VermilionCity_Gym_Text_LtSurgeIntro, VermilionCity_Gym_Text_LtSurgeDefeat, VermilionCity_Gym_EventScript_DefeatedLtSurge, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM34_FROM_SURGE, VermilionCity_Gym_EventScript_GiveTM34
 	msgbox VermilionCity_Gym_Text_LtSurgePostBattle
@@ -272,6 +277,16 @@ VermilionCity_Gym_EventScript_GymGuy::
 
 VermilionCity_Gym_EventScript_GymGuyPostVictory::
 	msgbox VermilionCity_Gym_Text_GymGuyPostVictory
+	release
+	end
+
+VermilionCity_Gym_EventScript_LtSurgePartyReject::
+	lock
+	faceplayer
+	msgbox VermilionCity_Gym_Text_LtSurgeIntro
+	msgbox VermilionCity_Gym_Text_LtSurgeBeat
+	msgbox VermilionCity_Gym_Text_LtSurgePartyReject
+	fadedefaultbgm
 	release
 	end
 

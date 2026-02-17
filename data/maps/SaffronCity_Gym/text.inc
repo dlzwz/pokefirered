@@ -146,6 +146,15 @@ SaffronCity_Gym_Text_GymGuyPostVictory::
     .string "If I had that, I'd make a bundle\n"
     .string "at the slots!$"
 
+SaffronCity_Gym_Text_SabrinaBeat::
+    .string "{PAUSE_MUSIC}…$"
+
+SaffronCity_Gym_Text_SabrinaPartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}I foresaw this… I can see your\n"
+    .string "intentions clearly.\p"
+    .string "Reduce your party to 4 POKéMON.\n"
+    .string "Then we will begin.$"
+
 SaffronCity_Gym_Text_GymStatue::
     .string "SAFFRON POKéMON GYM\n"
     .string "LEADER: SABRINA\p"

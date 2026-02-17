@@ -107,6 +107,15 @@ PewterCity_Gym_Text_YoureChampMaterial::
     .string "Just as I thought!\n"
     .string "You're POKéMON champ material!$"
 
+PewterCity_Gym_Text_BrockBeat::
+    .string "{PAUSE_MUSIC}Hmm…$"
+
+PewterCity_Gym_Text_BrockPartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}True strength isn't proven by\n"
+    .string "crowding the field.\p"
+    .string "If you wish to face me,\n"
+    .string "bring 2 POKéMON.$"
+
 PewterCity_Gym_Text_GymStatue::
     .string "PEWTER POKéMON GYM\n"
     .string "LEADER: BROCK\p"

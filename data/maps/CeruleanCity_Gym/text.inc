@@ -78,6 +78,14 @@ CeruleanCity_Gym_Text_WeMakePrettyGoodTeam::
     .string "You and me, kid, we make a pretty\n"
     .string "darn-good team!$"
 
+CeruleanCity_Gym_Text_MistyBeat::
+    .string "{PAUSE_MUSIC}Hey!$"
+
+CeruleanCity_Gym_Text_MistyPartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}This isn't a numbers contest!\p"
+    .string "If you want to battle me, pick\n"
+    .string "2 POKéMON and step up!$"
+
 CeruleanCity_Gym_Text_GymStatue::
     .string "CERULEAN POKéMON GYM\n"
     .string "LEADER: MISTY\p"

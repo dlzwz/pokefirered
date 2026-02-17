@@ -47,6 +47,11 @@ CinnabarIsland_Gym_OnLoadOpenDoor6::
 
 CinnabarIsland_Gym_EventScript_Blaine::
 	famechecker FAMECHECKER_BLAINE, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
+	goto_if_set FLAG_DEFEATED_BLAINE, CinnabarIsland_Gym_EventScript_BlaineBattle
+	getpartysize
+	compare VAR_RESULT, 4
+	goto_if_gt CinnabarIsland_Gym_EventScript_BlainePartyReject
+CinnabarIsland_Gym_EventScript_BlaineBattle::
 	trainerbattle_single TRAINER_LEADER_BLAINE, CinnabarIsland_Gym_Text_BlaineIntro, CinnabarIsland_Gym_Text_BlaineDefeat, CinnabarIsland_Gym_EventScript_DefeatedBlaine, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM38_FROM_BLAINE, CinnabarIsland_Gym_EventScript_GiveTM38
 	msgbox CinnabarIsland_Gym_Text_BlainePostBattle
@@ -179,6 +184,16 @@ CinnabarIsland_Gym_EventScript_GymGuy::
 
 CinnabarIsland_Gym_EventScript_GymGuyPostVictory::
 	msgbox CinnabarIsland_Gym_Text_GymGuyPostVictory
+	release
+	end
+
+CinnabarIsland_Gym_EventScript_BlainePartyReject::
+	lock
+	faceplayer
+	msgbox CinnabarIsland_Gym_Text_BlaineIntro
+	msgbox CinnabarIsland_Gym_Text_BlaineBeat
+	msgbox CinnabarIsland_Gym_Text_BlainePartyReject
+	fadedefaultbgm
 	release
 	end
 

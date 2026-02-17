@@ -3,6 +3,11 @@ SaffronCity_Gym_MapScripts::
 
 SaffronCity_Gym_EventScript_Sabrina::
 	famechecker FAMECHECKER_SABRINA, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
+	goto_if_set FLAG_DEFEATED_SABRINA, SaffronCity_Gym_EventScript_SabrinaBattle
+	getpartysize
+	compare VAR_RESULT, 4
+	goto_if_gt SaffronCity_Gym_EventScript_SabrinaPartyReject
+SaffronCity_Gym_EventScript_SabrinaBattle::
 	trainerbattle_single TRAINER_LEADER_SABRINA, SaffronCity_Gym_Text_SabrinaIntro, SaffronCity_Gym_Text_SabrinaDefeat, SaffronCity_Gym_EventScript_DefeatedSabrina, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM04_FROM_SABRINA, SaffronCity_Gym_EventScript_GiveTM04
 	msgbox SaffronCity_Gym_Text_ExplainTM04
@@ -80,6 +85,16 @@ SaffronCity_Gym_EventScript_GymGuy::
 
 SaffronCity_Gym_EventScript_GymGuyPostVictory::
 	msgbox SaffronCity_Gym_Text_GymGuyPostVictory
+	release
+	end
+
+SaffronCity_Gym_EventScript_SabrinaPartyReject::
+	lock
+	faceplayer
+	msgbox SaffronCity_Gym_Text_SabrinaIntro
+	msgbox SaffronCity_Gym_Text_SabrinaBeat
+	msgbox SaffronCity_Gym_Text_SabrinaPartyReject
+	fadedefaultbgm
 	release
 	end
 

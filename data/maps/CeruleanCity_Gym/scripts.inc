@@ -3,6 +3,11 @@ CeruleanCity_Gym_MapScripts::
 
 CeruleanCity_Gym_EventScript_Misty::
 	famechecker FAMECHECKER_MISTY, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
+	goto_if_set FLAG_DEFEATED_MISTY, CeruleanCity_Gym_EventScript_MistyBattle
+	getpartysize
+	compare VAR_RESULT, 2
+	goto_if_gt CeruleanCity_Gym_EventScript_MistyPartyReject
+CeruleanCity_Gym_EventScript_MistyBattle::
 	trainerbattle_single TRAINER_LEADER_MISTY, CeruleanCity_Gym_Text_MistyIntro, CeruleanCity_Gym_Text_MistyDefeat, CeruleanCity_Gym_EventScript_MistyDefeated, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM03_FROM_MISTY, CeruleanCity_Gym_EventScript_GiveTM03
 	msgbox CeruleanCity_Gym_Text_ExplainTM03
@@ -54,6 +59,16 @@ CeruleanCity_Gym_EventScript_GymGuy::
 
 CeruleanCity_Gym_EventScript_GymGuyPostVictory::
 	msgbox CeruleanCity_Gym_Text_WeMakePrettyGoodTeam
+	release
+	end
+
+CeruleanCity_Gym_EventScript_MistyPartyReject::
+	lock
+	faceplayer
+	msgbox CeruleanCity_Gym_Text_MistyIntro
+	msgbox CeruleanCity_Gym_Text_MistyBeat
+	msgbox CeruleanCity_Gym_Text_MistyPartyReject
+	fadedefaultbgm
 	release
 	end
 

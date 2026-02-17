@@ -97,6 +97,14 @@ SaffronCity_Dojo_Text_EnemiesOnEverySide::
 SaffronCity_Dojo_Text_GoesAroundComesAround::
     .string "What goes around comes around.$"
 
+SaffronCity_Dojo_Text_KoichiBeat::
+    .string "Hwaa!$"
+
+SaffronCity_Dojo_Text_KoichiPartyReject::
+    .string "Too many!\p"
+    .string "This is a test of skill!\n"
+    .string "Bring 2 POKéMON!$"
+
 SaffronCity_Dojo_Text_FightingDojo::
     .string "FIGHTING DOJO$"
 

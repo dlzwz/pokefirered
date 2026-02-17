@@ -157,6 +157,15 @@ ViridianCity_Gym_Text_GymGuyPostVictory::
     .string "Blow me away! GIOVANNI was the\n"
     .string "GYM LEADER of VIRIDIAN?$"
 
+ViridianCity_Gym_Text_GiovanniBeat::
+    .string "{PAUSE_MUSIC}…$"
+
+ViridianCity_Gym_Text_GiovanniPartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}You think numbers will secure\n"
+    .string "your victory? Hmph.\p"
+    .string "Return with 5 POKéMON.\n"
+    .string "Then we shall battle.$"
+
 ViridianCity_Gym_Text_GymStatue::
     .string "VIRIDIAN POKéMON GYM\n"
     .string "LEADER: ?\p"

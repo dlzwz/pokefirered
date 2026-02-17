@@ -101,6 +101,13 @@ VermilionCity_Gym_Text_GymGuyPostVictory::
     .string "Whew!\n"
     .string "That match was electric!$"
 
+VermilionCity_Gym_Text_LtSurgeBeat::
+    .string "{PAUSE_MUSIC}Hold it!$"
+
+VermilionCity_Gym_Text_LtSurgePartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}This is my battlefield, kid!\p"
+    .string "3 POKéMON! That's the limit!$"
+
 VermilionCity_Gym_Text_GymStatue::
     .string "VERMILION POKéMON GYM\n"
     .string "LEADER: LT. SURGE\p"

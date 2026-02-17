@@ -138,6 +138,15 @@ CeladonCity_Gym_Text_MaryPostBattle::
     .string "I didn't bring my best POKéMON.\n"
     .string "Wait until next time!$"
 
+CeladonCity_Gym_Text_ErikaBeat::
+    .string "{PAUSE_MUSIC}Oh…?$"
+
+CeladonCity_Gym_Text_ErikaPartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}It seems you've brought quite\n"
+    .string "a few companions.\p"
+    .string "For this match, please choose\n"
+    .string "3 POKéMON.$"
+
 CeladonCity_Gym_Text_GymStatue::
     .string "CELADON POKéMON GYM\n"
     .string "LEADER: ERIKA\p"

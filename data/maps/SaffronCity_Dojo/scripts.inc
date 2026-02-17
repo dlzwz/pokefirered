@@ -134,6 +134,12 @@ SaffronCity_Dojo_EventScript_Mike::
 	end
 
 SaffronCity_Dojo_EventScript_MasterKoichi::
+	compare VAR_MAP_SCENE_SAFFRON_CITY_DOJO, 0
+	goto_if_ne SaffronCity_Dojo_EventScript_KoichiBattle
+	getpartysize
+	compare VAR_RESULT, 2
+	goto_if_gt SaffronCity_Dojo_EventScript_KoichiPartyReject
+SaffronCity_Dojo_EventScript_KoichiBattle::
 	trainerbattle_single TRAINER_BLACK_BELT_KOICHI, SaffronCity_Dojo_Text_MasterKoichiIntro, SaffronCity_Dojo_Text_MasterKoichiDefeat, SaffronCity_Dojo_EventScript_DefeatedMasterKoichi
 	goto_if_set FLAG_GOT_HITMON_FROM_DOJO, SaffronCity_Dojo_EventScript_MasterKoichiAlreadyGotHitmon
 	msgbox SaffronCity_Dojo_Text_ChoosePrizedFightingMon, MSGBOX_AUTOCLOSE
@@ -141,6 +147,15 @@ SaffronCity_Dojo_EventScript_MasterKoichi::
 
 SaffronCity_Dojo_EventScript_MasterKoichiAlreadyGotHitmon::
 	msgbox SaffronCity_Dojo_Text_StayAndTrainWithUs
+	release
+	end
+
+SaffronCity_Dojo_EventScript_KoichiPartyReject::
+	lock
+	faceplayer
+	msgbox SaffronCity_Dojo_Text_MasterKoichiIntro
+	msgbox SaffronCity_Dojo_Text_KoichiBeat
+	msgbox SaffronCity_Dojo_Text_KoichiPartyReject
 	release
 	end
 

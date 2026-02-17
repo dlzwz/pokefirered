@@ -142,6 +142,15 @@ FuchsiaCity_Gym_Text_GymGuyPostVictory::
     .string "It's amazing how ninja can terrify,\n"
     .string "even now!$"
 
+FuchsiaCity_Gym_Text_KogaBeat::
+    .string "{PAUSE_MUSIC}Hmph…$"
+
+FuchsiaCity_Gym_Text_KogaPartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}Fwahahaha! You would overwhelm\n"
+    .string "me with sheer numbers?\p"
+    .string "Cast aside the excess!\n"
+    .string "Bring 4 POKéMON!$"
+
 FuchsiaCity_Gym_Text_GymStatue::
     .string "FUCHSIA POKéMON GYM\n"
     .string "LEADER: KOGA\p"

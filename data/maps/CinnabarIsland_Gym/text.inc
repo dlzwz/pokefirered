@@ -137,6 +137,15 @@ CinnabarIsland_Gym_Text_GymGuyPostVictory::
     .string "{PLAYER}!\n"
     .string "You beat that firebrand!$"
 
+CinnabarIsland_Gym_Text_BlaineBeat::
+    .string "{PAUSE_MUSIC}Wait-!$"
+
+CinnabarIsland_Gym_Text_BlainePartyReject::
+    .string "{PLAY_BGM}{MUS_GYM}Hah! Trying to smother my flames\n"
+    .string "with numbers?\p"
+    .string "Bring 4 POKéMON. Let's see if\n"
+    .string "you can stand the heat!$"
+
 CinnabarIsland_Gym_Text_GymStatue::
     .string "CINNABAR POKéMON GYM\n"
     .string "LEADER: BLAINE\p"

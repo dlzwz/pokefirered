@@ -3,6 +3,11 @@ ViridianCity_Gym_MapScripts::
 
 ViridianCity_Gym_EventScript_Giovanni::
 	famechecker FAMECHECKER_GIOVANNI, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
+	goto_if_set FLAG_DEFEATED_LEADER_GIOVANNI, ViridianCity_Gym_EventScript_GiovanniBattle
+	getpartysize
+	compare VAR_RESULT, 5
+	goto_if_gt ViridianCity_Gym_EventScript_GiovanniPartyReject
+ViridianCity_Gym_EventScript_GiovanniBattle::
 	trainerbattle_single TRAINER_LEADER_GIOVANNI, ViridianCity_Gym_Text_GiovanniIntro, ViridianCity_Gym_Text_GiovanniDefeat, ViridianCity_Gym_EventScript_DefeatedGiovanni, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM26_FROM_GIOVANNI, ViridianCity_Gym_EventScript_GiveTM26
 	msgbox ViridianCity_Gym_Text_GiovanniPostBattle
@@ -89,6 +94,16 @@ ViridianCity_Gym_EventScript_GymGuy::
 ViridianCity_Gym_EventScript_GymGuyPostVictory::
 	famechecker FAMECHECKER_GIOVANNI, 4
 	msgbox ViridianCity_Gym_Text_GymGuyPostVictory
+	release
+	end
+
+ViridianCity_Gym_EventScript_GiovanniPartyReject::
+	lock
+	faceplayer
+	msgbox ViridianCity_Gym_Text_GiovanniIntro
+	msgbox ViridianCity_Gym_Text_GiovanniBeat
+	msgbox ViridianCity_Gym_Text_GiovanniPartyReject
+	fadedefaultbgm
 	release
 	end
 

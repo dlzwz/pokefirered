@@ -3,6 +3,11 @@ CeladonCity_Gym_MapScripts::
 
 CeladonCity_Gym_EventScript_Erika::
 	famechecker FAMECHECKER_ERIKA, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
+	goto_if_set FLAG_DEFEATED_ERIKA, CeladonCity_Gym_EventScript_ErikaBattle
+	getpartysize
+	compare VAR_RESULT, 3
+	goto_if_gt CeladonCity_Gym_EventScript_ErikaPartyReject
+CeladonCity_Gym_EventScript_ErikaBattle::
 	trainerbattle_single TRAINER_LEADER_ERIKA, CeladonCity_Gym_Text_ErikaIntro, CeladonCity_Gym_Text_ErikaDefeat, CeladonCity_Gym_EventScript_DefeatedErika, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM19_FROM_ERIKA, CeladonCity_Gym_EventScript_GiveTM19
 	famechecker FAMECHECKER_ERIKA, 4
@@ -69,6 +74,16 @@ CeladonCity_Gym_EventScript_Lori::
 CeladonCity_Gym_EventScript_Mary::
 	trainerbattle_single TRAINER_COOLTRAINER_MARY, CeladonCity_Gym_Text_MaryIntro, CeladonCity_Gym_Text_MaryDefeat
 	msgbox CeladonCity_Gym_Text_MaryPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+CeladonCity_Gym_EventScript_ErikaPartyReject::
+	lock
+	faceplayer
+	msgbox CeladonCity_Gym_Text_ErikaIntro
+	msgbox CeladonCity_Gym_Text_ErikaBeat
+	msgbox CeladonCity_Gym_Text_ErikaPartyReject
+	fadedefaultbgm
+	release
 	end
 
 CeladonCity_Gym_EventScript_GymStatue::
