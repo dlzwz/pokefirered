@@ -47,6 +47,18 @@ extern const u8 *const gBattleScriptsForMoveEffects[];
 
 #define TAG_LVLUP_BANNER_MON_ICON 55130
 
+// EXP Share banner constants
+#define TAG_EXPSHARE_ICON_BASE    55131
+#define EXP_BAR_X_OFFSET          33
+#define EXP_BAR_Y_OFFSET          16
+#define EXP_BAR_WIDTH             56
+#define EXP_BAR_HEIGHT             4
+#define EXP_BAR_TRACK_PAL_IDX     13
+#define EXP_BAR_FILL_PAL_IDX      14
+#define MAX_EXP_SHARE_RECIPIENTS   5
+#define BANNER_HEIGHT_TILES        3
+#define BANNER_HEIGHT_PX          24
+
 static bool8 IsTwoTurnsMove(u16 move);
 static void TrySetDestinyBondToHappen(void);
 static u8 AttacksThisTurn(u8 battlerId, u16 move); // Note: returns 1 if it's a charging turn, otherwise 2.
@@ -60,6 +72,23 @@ static void DrawLevelUpWindow2(void);
 static void PutMonIconOnLvlUpBanner(void);
 static void DrawLevelUpBannerText(void);
 static void SpriteCB_MonIconOnLvlUpBanner(struct Sprite* sprite);
+
+// EXP Share banner functions
+static u8 CountExpShareRecipients(void);
+static void InitExpShareBanners(void);
+static void DrawExpShareBannerSlot(u8 slotIndex, u8 partyIndex);
+static void DrawExpShareBarAt(u8 slotIndex, u16 species, u16 level, u32 exp);
+static void DrawExpShareBar(u8 slotIndex, u8 partyIndex);
+static void RedrawExpShareLevel(u8 slotIndex, u16 level);
+static u8 GetLevelFromExp(u8 growthRate, u32 exp);
+static void PutMonIconOnExpShareBanner(u8 slotIndex, u8 partyIndex);
+static void SpriteCB_ExpShareIcon(struct Sprite *sprite);
+static s32 CalcExpShareGain(u8 partyIndex);
+static void InitExpShareAnimation(void);
+static bool8 UpdateExpShareAnimation(void);
+static bool8 SlideInExpShareBanners(void);
+static bool8 SlideOutExpShareBanners(void);
+static void CleanupExpShareBanners(void);
 
 static void Cmd_attackcanceler(void);
 static void Cmd_accuracycheck(void);
@@ -698,6 +727,20 @@ static const struct SpriteTemplate sSpriteTemplate_MonIconOnLvlUpBanner =
     .affineAnims = gDummySpriteAffineAnimTable,
     .callback = SpriteCB_MonIconOnLvlUpBanner
 };
+
+// EXP Share animation state
+static struct {
+    s32 expToGive;
+    s32 expGiven;
+    u32 originalExp;
+    u8 originalLevel;
+    u8 displayedLevel;
+    u8 growthRate;
+    u16 species;
+    bool8 done;
+} sExpShareAnim[MAX_EXP_SHARE_RECIPIENTS];
+static bool8 sExpShareAnimActive;
+static u8 sCleanBannerRow[12 * BANNER_HEIGHT_TILES * TILE_SIZE_4BPP];
 
 static const u16 sProtectSuccessRates[] = {USHRT_MAX, USHRT_MAX / 2, USHRT_MAX / 4, USHRT_MAX / 8};
 
@@ -3161,7 +3204,7 @@ static void Cmd_getexp(void)
             if (*exp == 0)
                 *exp = 1;
 
-            gExpShareExp = calculatedExp / 2;
+            gExpShareExp = calculatedExp;
             if (gExpShareExp == 0)
                 gExpShareExp = 1;
 
@@ -3309,7 +3352,10 @@ static void Cmd_getexp(void)
 
                 BattleScriptPushCursor();
                 gLeveledUpInBattle |= gBitTable[gBattleStruct->expGetterMonId];
-                gBattlescriptCurrInstr = BattleScript_LevelUp;
+                if (gExpShareCheck)
+                    gBattlescriptCurrInstr = BattleScript_LevelUpSkipSummary;
+                else
+                    gBattlescriptCurrInstr = BattleScript_LevelUp;
                 gBattleMoveDamage = (gBattleBufferB[gActiveBattler][2] | (gBattleBufferB[gActiveBattler][3] << 8));
                 AdjustFriendship(&gPlayerParty[gBattleStruct->expGetterMonId], FRIENDSHIP_EVENT_GROW_LEVEL);
 
@@ -3367,24 +3413,13 @@ static void Cmd_getexp(void)
             {
                 // After finishing the first pass for battlers, start a second pass
                 // for non-battling party members if the player has the EXP Share.
-                if (!gExpShareCheck && FlagGet(FLAG_GOT_EXP_SHARE_FROM_OAKS_AIDE))
+                if (!gExpShareCheck)
                 {
-                    s32 canReceiveExpShare = 0;
-                    sentIn = gSentPokesToOpponent[(gBattlerFainted & 2) >> 1];
-                    for (i = 0; i < PARTY_SIZE; i++)
-                    {
-                        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE || GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG)
-                            || GetMonData(&gPlayerParty[i], MON_DATA_HP) == 0)
-                            continue;
-                        if (!(gBitTable[i] & sentIn) && GetMonData(&gPlayerParty[i], MON_DATA_LEVEL) < MAX_LEVEL)
-                            canReceiveExpShare++;
-                    }
-                    if (canReceiveExpShare > 0)
+                    if (CountExpShareRecipients() > 0)
                     {
                         gExpShareCheck = TRUE;
                         gBattleStruct->expGetterMonId = 0;
-                        PrepareStringBattle(STRINGID_PKMNGAINEDEXPALL, gBattleStruct->expGetterBattlerId);
-                        gBattleScripting.getexpState = 2; // loop again
+                        gBattleScripting.getexpState = 7; // show exp share banners
                     }
                     else
                     {
@@ -3405,6 +3440,53 @@ static void Cmd_getexp(void)
             gBattleMons[gBattlerFainted].item = ITEM_NONE;
             gBattleMons[gBattlerFainted].ability = ABILITY_NONE;
             gBattlescriptCurrInstr += 2;
+        }
+        break;
+    case 7: // EXP Share banner: init
+        if (gBattleControllerExecFlags == 0)
+        {
+            // Set BG2 (banners) to priority 0 and demote BG0 (message box) to priority 1
+            // so the banners render in front of the message box when they overlap
+            SetBgAttribute(2, BG_ATTR_PRIORITY, 0);
+            SetBgAttribute(0, BG_ATTR_PRIORITY, 1);
+            ShowBg(0);
+            ShowBg(2);
+            InitExpShareBanners();
+            gBattleScripting.getexpState = 8;
+        }
+        break;
+    case 8: // EXP Share banner: slide in
+        if (!SlideInExpShareBanners())
+            gBattleScripting.getexpState = 9;
+        break;
+    case 9: // EXP Share banner: animate bars then wait for input
+        if (gMain.newKeys & (A_BUTTON | B_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            sExpShareAnimActive = FALSE;
+            gBattleScripting.getexpState = 10;
+        }
+        else if (sExpShareAnimActive)
+        {
+            if (!IsDma3ManagerBusyWithBgCopy())
+                sExpShareAnimActive = UpdateExpShareAnimation();
+        }
+        break;
+    case 10: // EXP Share banner: slide out
+        if (!SlideOutExpShareBanners())
+        {
+            CleanupExpShareBanners();
+            gBattleScripting.getexpState = 11;
+        }
+        break;
+    case 11: // EXP Share banner: cleanup and proceed to exp distribution
+        if (!IsDma3ManagerBusyWithBgCopy())
+        {
+            SetBgAttribute(0, BG_ATTR_PRIORITY, 0);
+            SetBgAttribute(1, BG_ATTR_PRIORITY, 1);
+            ShowBg(0);
+            ShowBg(1);
+            gBattleScripting.getexpState = 2; // proceed to exp distribution loop
         }
         break;
     }
@@ -5962,6 +6044,448 @@ bool32 IsMonGettingExpSentOut(void)
         return TRUE;
 
     return FALSE;
+}
+
+// ==========================================
+// EXP Share Banner Interface
+// ==========================================
+
+#define sDestroy data[0]
+#define sXOffset data[1]
+
+static void SpriteCB_ExpShareIcon(struct Sprite *sprite)
+{
+    sprite->x2 = sprite->sXOffset - gBattle_BG2_X;
+}
+
+#undef sDestroy
+#undef sXOffset
+
+static s32 CalcExpShareGain(u8 partyIndex)
+{
+    struct Pokemon *mon = &gPlayerParty[partyIndex];
+    u16 item = GetMonData(mon, MON_DATA_HELD_ITEM);
+    u8 holdEffect;
+    s32 expGain;
+
+    if (item == ITEM_ENIGMA_BERRY)
+        holdEffect = gSaveBlock1Ptr->enigmaBerry.holdEffect;
+    else
+        holdEffect = ItemId_GetHoldEffect(item);
+
+    expGain = gExpShareExp;
+
+    if (holdEffect == HOLD_EFFECT_LUCKY_EGG)
+        expGain = (expGain * 150) / 100;
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+        expGain = (expGain * 150) / 100;
+    if (IsTradedMon(mon) && !(gBattleTypeFlags & BATTLE_TYPE_POKEDUDE))
+        expGain = (expGain * 150) / 100;
+
+    // Cap to level cap
+    {
+        u16 species = GetMonData(mon, MON_DATA_SPECIES);
+        u32 currExp = GetMonData(mon, MON_DATA_EXP);
+        u8 levelCap = GetCurrentLevelCap();
+        u32 expAtCap = gExperienceTables[gSpeciesInfo[species].growthRate][levelCap];
+
+        if (currExp + expGain > expAtCap)
+            expGain = expAtCap - currExp;
+    }
+
+    if (expGain < 0)
+        expGain = 0;
+
+    return expGain;
+}
+
+static u8 CountExpShareRecipients(void)
+{
+    u8 count = 0;
+    s32 i;
+    s32 sentIn = gSentPokesToOpponent[(gBattlerFainted & 2) >> 1];
+
+    for (i = 0; i < PARTY_SIZE && count < MAX_EXP_SHARE_RECIPIENTS; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            continue;
+        if (GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            continue;
+        if (GetMonData(&gPlayerParty[i], MON_DATA_HP) == 0)
+            continue;
+        if (gBitTable[i] & sentIn)
+            continue;
+        if (GetMonData(&gPlayerParty[i], MON_DATA_LEVEL) >= GetCurrentLevelCap())
+            continue;
+
+        gBattleStruct->expShareRecipients[count] = i;
+        count++;
+    }
+
+    gBattleStruct->expShareRecipientCount = count;
+    return count;
+}
+
+static void DrawExpShareBarAt(u8 slotIndex, u16 species, u16 level, u32 exp)
+{
+    u16 yBase = slotIndex * BANNER_HEIGHT_PX;
+    u8 windowId = gBattleStruct->expShareWindowId;
+    u16 fillWidth;
+    u32 expForThisLevel, expForNextLevel, totalExpInLevel, currentExpInLevel;
+
+    // Draw bar track (dark background)
+    FillWindowPixelRect(windowId, PIXEL_FILL(EXP_BAR_TRACK_PAL_IDX),
+                        EXP_BAR_X_OFFSET, yBase + EXP_BAR_Y_OFFSET,
+                        EXP_BAR_WIDTH, EXP_BAR_HEIGHT);
+
+    if (level >= MAX_LEVEL || level >= GetCurrentLevelCap())
+        return;
+
+    // Calculate fill proportion
+    expForThisLevel = gExperienceTables[gSpeciesInfo[species].growthRate][level];
+    expForNextLevel = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1];
+    totalExpInLevel = expForNextLevel - expForThisLevel;
+    currentExpInLevel = exp - expForThisLevel;
+
+    fillWidth = 0;
+    if (totalExpInLevel > 0)
+        fillWidth = (u16)((currentExpInLevel * EXP_BAR_WIDTH) / totalExpInLevel);
+    if (fillWidth > EXP_BAR_WIDTH)
+        fillWidth = EXP_BAR_WIDTH;
+
+    if (fillWidth > 0)
+    {
+        FillWindowPixelRect(windowId, PIXEL_FILL(EXP_BAR_FILL_PAL_IDX),
+                            EXP_BAR_X_OFFSET, yBase + EXP_BAR_Y_OFFSET,
+                            fillWidth, EXP_BAR_HEIGHT);
+    }
+}
+
+static void DrawExpShareBar(u8 slotIndex, u8 partyIndex)
+{
+    struct Pokemon *mon = &gPlayerParty[partyIndex];
+    DrawExpShareBarAt(slotIndex,
+                      GetMonData(mon, MON_DATA_SPECIES),
+                      GetMonData(mon, MON_DATA_LEVEL),
+                      GetMonData(mon, MON_DATA_EXP));
+}
+
+static void RedrawExpShareLevel(u8 slotIndex, u16 level)
+{
+    u16 yBase = slotIndex * BANNER_HEIGHT_PX;
+    u8 windowId = gBattleStruct->expShareWindowId;
+    struct TextPrinterTemplate printerTemplate;
+    u8 *txtPtr;
+    u8 *tileData = gWindows[windowId].tileData;
+    u32 slotTileStart = slotIndex * BANNER_HEIGHT_TILES * 12 * TILE_SIZE_4BPP;
+
+    // Restore banner graphic tiles for the level text area (tile cols 9-11, rows 0-1)
+    CpuCopy16(sCleanBannerRow + 9 * TILE_SIZE_4BPP,
+              tileData + slotTileStart + 9 * TILE_SIZE_4BPP,
+              3 * TILE_SIZE_4BPP);
+    CpuCopy16(sCleanBannerRow + (12 + 9) * TILE_SIZE_4BPP,
+              tileData + slotTileStart + (12 + 9) * TILE_SIZE_4BPP,
+              3 * TILE_SIZE_4BPP);
+
+    // Redraw level text
+    txtPtr = gStringVar4;
+    *(txtPtr++) = CHAR_EXTRA_SYMBOL;
+    *(txtPtr++) = CHAR_LV_2;
+    txtPtr = ConvertIntToDecimalStringN(txtPtr, level, STR_CONV_MODE_LEFT_ALIGN, 3);
+
+    printerTemplate.currentChar = gStringVar4;
+    printerTemplate.windowId = windowId;
+    printerTemplate.fontId = FONT_SMALL;
+    printerTemplate.x = 72;
+    printerTemplate.y = yBase;
+    printerTemplate.currentX = 72;
+    printerTemplate.currentY = yBase;
+    printerTemplate.letterSpacing = 0;
+    printerTemplate.lineSpacing = 0;
+    printerTemplate.unk = 0;
+    printerTemplate.fgColor = TEXT_COLOR_WHITE;
+    printerTemplate.bgColor = TEXT_COLOR_TRANSPARENT;
+    printerTemplate.shadowColor = TEXT_COLOR_DARK_GRAY;
+
+    AddTextPrinter(&printerTemplate, TEXT_SKIP_DRAW, NULL);
+}
+
+static u8 GetLevelFromExp(u8 growthRate, u32 exp)
+{
+    u8 level;
+    for (level = 1; level < MAX_LEVEL; level++)
+    {
+        if (gExperienceTables[growthRate][level + 1] > exp)
+            return level;
+    }
+    return MAX_LEVEL;
+}
+
+static void DrawExpShareBannerSlot(u8 slotIndex, u8 partyIndex)
+{
+    struct Pokemon *mon = &gPlayerParty[partyIndex];
+    u16 level = GetMonData(mon, MON_DATA_LEVEL);
+    u16 yBase = slotIndex * BANNER_HEIGHT_PX;
+    struct TextPrinterTemplate printerTemplate;
+    u8 *txtPtr;
+
+    // Draw name on first line
+    GetMonNickname(mon, gStringVar4);
+
+    printerTemplate.currentChar = gStringVar4;
+    printerTemplate.windowId = gBattleStruct->expShareWindowId;
+    printerTemplate.fontId = FONT_SMALL;
+    printerTemplate.x = 32;
+    printerTemplate.y = yBase;
+    printerTemplate.currentX = 32;
+    printerTemplate.currentY = yBase;
+    printerTemplate.letterSpacing = 0;
+    printerTemplate.lineSpacing = 0;
+    printerTemplate.unk = 0;
+    printerTemplate.fgColor = TEXT_COLOR_WHITE;
+    printerTemplate.bgColor = TEXT_COLOR_TRANSPARENT;
+    printerTemplate.shadowColor = TEXT_COLOR_DARK_GRAY;
+
+    AddTextPrinter(&printerTemplate, TEXT_SKIP_DRAW, NULL);
+
+    // Draw "Lv.X" at top-right of banner
+    txtPtr = gStringVar4;
+    *(txtPtr++) = CHAR_EXTRA_SYMBOL;
+    *(txtPtr++) = CHAR_LV_2;
+    txtPtr = ConvertIntToDecimalStringN(txtPtr, level, STR_CONV_MODE_LEFT_ALIGN, 3);
+
+    printerTemplate.currentChar = gStringVar4;
+    printerTemplate.x = 72;
+    printerTemplate.currentX = 72;
+    AddTextPrinter(&printerTemplate, TEXT_SKIP_DRAW, NULL);
+
+    // Draw EXP bar
+    DrawExpShareBar(slotIndex, partyIndex);
+}
+
+static void PutMonIconOnExpShareBanner(u8 slotIndex, u8 partyIndex)
+{
+    struct Pokemon *mon = &gPlayerParty[partyIndex];
+    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
+    u16 tag = TAG_EXPSHARE_ICON_BASE + slotIndex;
+    u8 spriteId;
+    struct SpriteTemplate iconTemplate;
+
+    struct SpriteSheet iconSheet = {
+        .data = GetMonIconPtr(species, personality, 1),
+        .size = 0x200,
+        .tag = tag
+    };
+
+    struct SpritePalette iconPalSheet = {
+        .data = GetValidMonIconPalettePtr(species),
+        .tag = tag
+    };
+
+    LoadSpriteSheet(&iconSheet);
+    LoadSpritePalette(&iconPalSheet);
+
+    // Build a local sprite template with this slot's unique tag
+    iconTemplate.tileTag = tag;
+    iconTemplate.paletteTag = tag;
+    iconTemplate.oam = &sOamData_MonIconOnLvlUpBanner;
+    iconTemplate.anims = gDummySpriteAnimTable;
+    iconTemplate.images = NULL;
+    iconTemplate.affineAnims = gDummySpriteAffineAnimTable;
+    iconTemplate.callback = SpriteCB_ExpShareIcon;
+
+    spriteId = CreateSprite(&iconTemplate, 256, slotIndex * BANNER_HEIGHT_PX + 10, 0);
+    gSprites[spriteId].data[0] = FALSE;
+    gSprites[spriteId].data[1] = gBattle_BG2_X;
+    gBattleStruct->expShareIconSpriteIds[slotIndex] = spriteId;
+}
+
+static void InitExpShareAnimation(void)
+{
+    u8 i;
+    for (i = 0; i < gBattleStruct->expShareRecipientCount; i++)
+    {
+        u8 partyIndex = gBattleStruct->expShareRecipients[i];
+        struct Pokemon *mon = &gPlayerParty[partyIndex];
+
+        sExpShareAnim[i].species = GetMonData(mon, MON_DATA_SPECIES);
+        sExpShareAnim[i].originalExp = GetMonData(mon, MON_DATA_EXP);
+        sExpShareAnim[i].originalLevel = GetMonData(mon, MON_DATA_LEVEL);
+        sExpShareAnim[i].displayedLevel = sExpShareAnim[i].originalLevel;
+        sExpShareAnim[i].growthRate = gSpeciesInfo[sExpShareAnim[i].species].growthRate;
+        sExpShareAnim[i].expToGive = CalcExpShareGain(partyIndex);
+        sExpShareAnim[i].expGiven = 0;
+        sExpShareAnim[i].done = FALSE;
+    }
+    sExpShareAnimActive = TRUE;
+}
+
+// Returns TRUE while animation is still playing
+static bool8 UpdateExpShareAnimation(void)
+{
+    u8 i;
+    bool8 anyActive = FALSE;
+    bool8 needsRedraw = FALSE;
+
+    for (i = 0; i < gBattleStruct->expShareRecipientCount; i++)
+    {
+        s32 increment;
+        u32 animatedExp;
+        u8 newLevel;
+
+        if (sExpShareAnim[i].done)
+            continue;
+
+        anyActive = TRUE;
+
+        // Advance exp by an increment proportional to total, targeting ~30 frames
+        increment = sExpShareAnim[i].expToGive / 30;
+        if (increment < 1)
+            increment = 1;
+
+        sExpShareAnim[i].expGiven += increment;
+        if (sExpShareAnim[i].expGiven >= sExpShareAnim[i].expToGive)
+        {
+            sExpShareAnim[i].expGiven = sExpShareAnim[i].expToGive;
+            sExpShareAnim[i].done = TRUE;
+        }
+
+        // Calculate current animated state
+        animatedExp = sExpShareAnim[i].originalExp + sExpShareAnim[i].expGiven;
+        newLevel = GetLevelFromExp(sExpShareAnim[i].growthRate, animatedExp);
+
+        // Update level display if changed
+        if (newLevel != sExpShareAnim[i].displayedLevel)
+        {
+            sExpShareAnim[i].displayedLevel = newLevel;
+            RedrawExpShareLevel(i, newLevel);
+        }
+
+        // Redraw bar with animated exp value
+        DrawExpShareBarAt(i, sExpShareAnim[i].species, newLevel, animatedExp);
+        needsRedraw = TRUE;
+    }
+
+    if (needsRedraw)
+        CopyWindowToVram(gBattleStruct->expShareWindowId, COPYWIN_GFX);
+
+    return anyActive;
+}
+
+static void InitExpShareBanners(void)
+{
+    u8 i;
+    u8 numRecipients = gBattleStruct->expShareRecipientCount;
+    u16 bannerTileSize;
+    u8 *tileData;
+
+    struct WindowTemplate template;
+    template.bg = 2;
+    template.tilemapLeft = 18;
+    template.tilemapTop = 0;
+    template.width = 12;
+    template.height = numRecipients * BANNER_HEIGHT_TILES;
+    template.paletteNum = 6;
+    template.baseBlock = 0x16E;
+
+    // Start banners from top of screen, growing downward
+    gBattle_BG2_Y = 0;
+    gBattle_BG2_X = LEVEL_UP_BANNER_START;
+
+    // Load banner palette and add exp bar colors
+    LoadPalette(sLevelUpBanner_Pal, BG_PLTT_ID(6), sizeof(sLevelUpBanner_Pal));
+    gPlttBufferUnfaded[BG_PLTT_ID(6) + EXP_BAR_TRACK_PAL_IDX] = RGB(2, 3, 8);
+    gPlttBufferFaded[BG_PLTT_ID(6) + EXP_BAR_TRACK_PAL_IDX] = RGB(2, 3, 8);
+    gPlttBufferUnfaded[BG_PLTT_ID(6) + EXP_BAR_FILL_PAL_IDX] = RGB(8, 20, 28);
+    gPlttBufferFaded[BG_PLTT_ID(6) + EXP_BAR_FILL_PAL_IDX] = RGB(8, 20, 28);
+
+    // Create dynamic window
+    gBattleStruct->expShareWindowId = AddWindow(&template);
+
+    // Clear the window
+    FillWindowPixelBuffer(gBattleStruct->expShareWindowId, PIXEL_FILL(0));
+
+    // Decompress banner gfx into first row
+    CopyToWindowPixelBuffer(gBattleStruct->expShareWindowId, sLevelUpBanner_Gfx, 0, 0);
+
+    // Save clean banner row before text is drawn (for later tile restoration)
+    bannerTileSize = 12 * BANNER_HEIGHT_TILES * TILE_SIZE_4BPP;
+    tileData = gWindows[gBattleStruct->expShareWindowId].tileData;
+    CpuCopy16(tileData, sCleanBannerRow, bannerTileSize);
+
+    // Copy first row's pixels to subsequent rows
+    for (i = 1; i < numRecipients; i++)
+    {
+        CpuCopy16(tileData, tileData + i * bannerTileSize, bannerTileSize);
+    }
+
+    // Draw text and exp bars for each recipient
+    for (i = 0; i < numRecipients; i++)
+    {
+        DrawExpShareBannerSlot(i, gBattleStruct->expShareRecipients[i]);
+    }
+
+    // Commit to VRAM
+    PutWindowTilemap(gBattleStruct->expShareWindowId);
+    CopyWindowToVram(gBattleStruct->expShareWindowId, COPYWIN_FULL);
+
+    // Create icon sprites
+    for (i = 0; i < numRecipients; i++)
+    {
+        PutMonIconOnExpShareBanner(i, gBattleStruct->expShareRecipients[i]);
+    }
+
+    // Initialize animation state for each recipient
+    InitExpShareAnimation();
+}
+
+static bool8 SlideInExpShareBanners(void)
+{
+    if (IsDma3ManagerBusyWithBgCopy())
+        return TRUE;
+
+    if (gBattle_BG2_X == LEVEL_UP_BANNER_END)
+        return FALSE;
+
+    gBattle_BG2_X += 8;
+    if (gBattle_BG2_X >= LEVEL_UP_BANNER_END)
+        gBattle_BG2_X = LEVEL_UP_BANNER_END;
+
+    return (gBattle_BG2_X != LEVEL_UP_BANNER_END);
+}
+
+static bool8 SlideOutExpShareBanners(void)
+{
+    if (gBattle_BG2_X == LEVEL_UP_BANNER_START)
+        return FALSE;
+
+    if (gBattle_BG2_X - 16 < LEVEL_UP_BANNER_START)
+        gBattle_BG2_X = LEVEL_UP_BANNER_START;
+    else
+        gBattle_BG2_X -= 16;
+
+    return (gBattle_BG2_X != LEVEL_UP_BANNER_START);
+}
+
+static void CleanupExpShareBanners(void)
+{
+    u8 i;
+
+    for (i = 0; i < gBattleStruct->expShareRecipientCount; i++)
+    {
+        u16 tag = TAG_EXPSHARE_ICON_BASE + i;
+        DestroySprite(&gSprites[gBattleStruct->expShareIconSpriteIds[i]]);
+        FreeSpriteTilesByTag(tag);
+        FreeSpritePaletteByTag(tag);
+    }
+
+    ClearWindowTilemap(gBattleStruct->expShareWindowId);
+    CopyWindowToVram(gBattleStruct->expShareWindowId, COPYWIN_MAP);
+    RemoveWindow(gBattleStruct->expShareWindowId);
+
+    SetBgAttribute(2, BG_ATTR_PRIORITY, 2);
+    ShowBg(2);
 }
 
 static void Cmd_resetsentmonsvalue(void)

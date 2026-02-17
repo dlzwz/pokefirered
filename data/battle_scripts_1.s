@@ -3117,6 +3117,9 @@ BattleScript_LevelUp::
 	drawlvlupbox
 	handlelearnnewmove BattleScript_LearnedNewMove, BattleScript_LearnMoveReturn, TRUE
 	goto BattleScript_AskToLearnMove
+BattleScript_LevelUpSkipSummary::
+	handlelearnnewmove BattleScript_LearnedNewMove, BattleScript_LearnMoveReturn, TRUE
+	goto BattleScript_AskToLearnMove
 BattleScript_TryLearnMoveLoop::
 	handlelearnnewmove BattleScript_LearnedNewMove, BattleScript_LearnMoveReturn, FALSE
 BattleScript_AskToLearnMove::
