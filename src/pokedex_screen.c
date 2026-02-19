@@ -1625,7 +1625,7 @@ static void Task_DexScreen_CategorySubmenu(u8 taskId)
             sPokedexScreenData->state = 12;
             break;
         }
-        if (!JOY_HELD(R_BUTTON) && JOY_REPT(DPAD_LEFT))
+        if (!JOY_HELD(R_BUTTON) && JOY_NEW(DPAD_LEFT))
         {
             if (sPokedexScreenData->categoryCursorPosInPage != 0)
             {
@@ -1636,7 +1636,7 @@ static void Task_DexScreen_CategorySubmenu(u8 taskId)
             else
                 pageFlipCmd = 1;
         }
-        if (!JOY_HELD(R_BUTTON) && JOY_REPT(DPAD_RIGHT))
+        if (!JOY_HELD(R_BUTTON) && JOY_NEW(DPAD_RIGHT))
         {
             if (sPokedexScreenData->categoryCursorPosInPage < sPokedexScreenData->numMonsOnPage - 1)
             {

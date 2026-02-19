@@ -412,7 +412,7 @@ static u8 OptionMenu_ProcessInput(void)
 { 
     u16 current;
     u16 *curr;
-    if (JOY_REPT(DPAD_RIGHT))
+    if (JOY_NEW(DPAD_RIGHT))
     {
         current = sOptionMenuPtr->option[(sOptionMenuPtr->cursorPos)];
         if (current == (sOptionMenuItemCounts[sOptionMenuPtr->cursorPos] - 1))
@@ -424,28 +424,28 @@ static u8 OptionMenu_ProcessInput(void)
         else
             return 4;
     }
-    else if (JOY_REPT(DPAD_LEFT))
+    else if (JOY_NEW(DPAD_LEFT))
     {
         curr = &sOptionMenuPtr->option[sOptionMenuPtr->cursorPos];
         if (*curr == 0)
             *curr = sOptionMenuItemCounts[sOptionMenuPtr->cursorPos] - 1;
         else
             --*curr;
-        
+
         if (sOptionMenuPtr->cursorPos == MENUITEM_FRAMETYPE)
             return 2;
         else
             return 4;
     }
-    else if (JOY_REPT(DPAD_UP))
+    else if (JOY_NEW(DPAD_UP))
     {
         if (sOptionMenuPtr->cursorPos == MENUITEM_TEXTSPEED)
             sOptionMenuPtr->cursorPos = MENUITEM_CANCEL;
         else
             sOptionMenuPtr->cursorPos = sOptionMenuPtr->cursorPos - 1;
-        return 3;        
+        return 3;
     }
-    else if (JOY_REPT(DPAD_DOWN))
+    else if (JOY_NEW(DPAD_DOWN))
     {
         if (sOptionMenuPtr->cursorPos == MENUITEM_CANCEL)
             sOptionMenuPtr->cursorPos = MENUITEM_TEXTSPEED;

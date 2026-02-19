@@ -175,12 +175,12 @@ s32 ListMenu_ProcessInput(u8 listTaskId)
     {
         return LIST_CANCEL;
     }
-    else if (gMain.newAndRepeatedKeys & DPAD_UP)
+    else if (gMain.newKeys & DPAD_UP)
     {
         ListMenuChangeSelection(list, TRUE, 1, FALSE);
         return LIST_NOTHING_CHOSEN;
     }
-    else if (gMain.newAndRepeatedKeys & DPAD_DOWN)
+    else if (gMain.newKeys & DPAD_DOWN)
     {
         ListMenuChangeSelection(list, TRUE, 1, TRUE);
         return LIST_NOTHING_CHOSEN;
@@ -196,8 +196,8 @@ s32 ListMenu_ProcessInput(u8 listTaskId)
             rightButton = FALSE;
             break;
         case LIST_MULTIPLE_SCROLL_DPAD:
-            leftButton = gMain.newAndRepeatedKeys & DPAD_LEFT;
-            rightButton = gMain.newAndRepeatedKeys & DPAD_RIGHT;
+            leftButton = gMain.newKeys & DPAD_LEFT;
+            rightButton = gMain.newKeys & DPAD_RIGHT;
             break;
         case LIST_MULTIPLE_SCROLL_L_R:
             leftButton = gMain.newAndRepeatedKeys & L_BUTTON;

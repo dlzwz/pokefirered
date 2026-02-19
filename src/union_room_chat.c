@@ -1024,7 +1024,7 @@ static bool32 TypeChatMessage_HandleDPad(void)
 {
     do
     {
-        if (JOY_REPT(DPAD_UP))
+        if (JOY_NEW(DPAD_UP))
         {
             if (sWork->currentRow > 0)
                 sWork->currentRow--;
@@ -1033,7 +1033,7 @@ static bool32 TypeChatMessage_HandleDPad(void)
 
             break;
         }
-        if (JOY_REPT(DPAD_DOWN))
+        if (JOY_NEW(DPAD_DOWN))
         {
             if (sWork->currentRow < sKeyboardPageMaxRow[sWork->currentPage])
             {
@@ -1048,7 +1048,7 @@ static bool32 TypeChatMessage_HandleDPad(void)
         }
         if (sWork->currentPage != UNION_ROOM_KB_PAGE_COUNT)
         {
-            if (JOY_REPT(DPAD_LEFT))
+            if (JOY_NEW(DPAD_LEFT))
             {
                 if (sWork->currentCol > 0)
                     sWork->currentCol--;
@@ -1056,7 +1056,7 @@ static bool32 TypeChatMessage_HandleDPad(void)
                     sWork->currentCol = 4;
                 break;
             }
-            if (JOY_REPT(DPAD_RIGHT))
+            if (JOY_NEW(DPAD_RIGHT))
             {
                 if (sWork->currentCol < 4)
                     sWork->currentCol++;

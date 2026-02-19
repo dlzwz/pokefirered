@@ -407,13 +407,13 @@ s8 Menu_ProcessInput_other(void)
     {
         return MENU_B_PRESSED;
     }
-    if (JOY_REPT(DPAD_ANY) == DPAD_UP)
+    if (JOY_NEW(DPAD_ANY) == DPAD_UP)
     {
         PlaySE(SE_SELECT);
         Menu_MoveCursor(-1);
         return MENU_NOTHING_CHOSEN;
     }
-    if (JOY_REPT(DPAD_ANY) == DPAD_DOWN)
+    if (JOY_NEW(DPAD_ANY) == DPAD_DOWN)
     {
         PlaySE(SE_SELECT);
         Menu_MoveCursor(1);
@@ -436,13 +436,13 @@ s8 Menu_ProcessInputNoWrapAround_other(void)
     {
         return MENU_B_PRESSED;
     }
-    if (JOY_REPT(DPAD_ANY) == DPAD_UP)
+    if (JOY_NEW(DPAD_ANY) == DPAD_UP)
     {
         if (oldPos != Menu_MoveCursorNoWrapAround(-1))
             PlaySE(SE_SELECT);
         return MENU_NOTHING_CHOSEN;
     }
-    if (JOY_REPT(DPAD_ANY) == DPAD_DOWN)
+    if (JOY_NEW(DPAD_ANY) == DPAD_DOWN)
     {
         if (oldPos != Menu_MoveCursorNoWrapAround(1))
             PlaySE(SE_SELECT);
