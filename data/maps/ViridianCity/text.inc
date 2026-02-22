@@ -123,3 +123,18 @@ ViridianCity_Text_GymSign::
 ViridianCity_Text_GymDoorsAreLocked::
     .string "VIRIDIAN GYM's doors are locked…$"
 
+ViridianCity_Text_SelfTradeOffer::
+    .string "I can help you trade a\n"
+    .string "POKéMON with yourself!\p"
+    .string "Want to give it a try?$"
+
+ViridianCity_Text_SelfTradeDone::
+    .string "There you go!\p"
+    .string "Come back anytime you\n"
+    .string "want to trade again.$"
+
+ViridianCity_Text_SelfTradeDeclined::
+    .string "No? That's fine.\p"
+    .string "Come back if you change\n"
+    .string "your mind.$"
+

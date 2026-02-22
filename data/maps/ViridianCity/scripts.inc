@@ -235,3 +235,29 @@ ViridianCity_EventScript_DoTutorialBattle::
 	giveitem ITEM_TEACHY_TV
 	msgbox ViridianCity_Text_WatchThatToLearnBasics
 	return
+
+ViridianCity_EventScript_SelfTrade::
+	lock
+	faceplayer
+	msgbox ViridianCity_Text_SelfTradeOffer, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, ViridianCity_EventScript_SelfTradeDecline
+	special ChoosePartyMon
+	waitstate
+	lock
+	faceplayer
+	goto_if_ge VAR_0x8004, PARTY_SIZE, ViridianCity_EventScript_SelfTradeDecline
+	copyvar VAR_0x8005, VAR_0x8004
+	setvar VAR_0x8004, INGAME_TRADE_SELF
+	special CreateInGameTradePokemon
+	special DoInGameTradeScene
+	waitstate
+	lock
+	faceplayer
+	msgbox ViridianCity_Text_SelfTradeDone
+	release
+	end
+
+ViridianCity_EventScript_SelfTradeDecline::
+	msgbox ViridianCity_Text_SelfTradeDeclined
+	release
+	end

@@ -1230,7 +1230,6 @@ static void TradeBufferOTnameAndNicknames(void)
 {
     u8 nickname[20];
     u8 mpId;
-    const struct InGameTrade * inGameTrade;
     if (sTradeAnim->isLinkTrade)
     {
         mpId = GetMultiplayerId();
@@ -1242,9 +1241,9 @@ static void TradeBufferOTnameAndNicknames(void)
     }
     else
     {
-        inGameTrade = &sInGameTrades[gSpecialVar_0x8004];
-        StringCopy(gStringVar1, inGameTrade->otName);
-        StringCopy_Nickname(gStringVar3, inGameTrade->nickname);
+        GetMonData(&gEnemyParty[0], MON_DATA_OT_NAME, gStringVar1);
+        GetMonData(&gEnemyParty[0], MON_DATA_NICKNAME, nickname);
+        StringCopy_Nickname(gStringVar3, nickname);
         GetMonData(&gPlayerParty[gSpecialVar_0x8005], MON_DATA_NICKNAME, nickname);
         StringCopy_Nickname(gStringVar2, nickname);
     }
@@ -2520,7 +2519,10 @@ u16 GetTradeSpecies(void)
 
 void CreateInGameTradePokemon(void)
 {
-    CreateInGameTradePokemonInternal(gSpecialVar_0x8005, gSpecialVar_0x8004);
+    if (gSpecialVar_0x8004 == INGAME_TRADE_SELF)
+        gEnemyParty[0] = gPlayerParty[gSpecialVar_0x8005];
+    else
+        CreateInGameTradePokemonInternal(gSpecialVar_0x8005, gSpecialVar_0x8004);
 }
 
 static void CB2_UpdateLinkTrade(void)
